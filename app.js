@@ -2,6 +2,15 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
+
+const URL = 'mongodb://localhost:27017/ethDB';
+mongoose.connect(URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true
+});
+mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
 
@@ -22,6 +31,11 @@ app.use((req,res,next)=>{
 });
 
 // Routes http requests
+const blockRoutes = require('./routes/blocks');
+const transacitonRoutes = require('./routes/transactions');
+
+app.use('/blocks', blockRoutes);
+app.use('/txs', transacitonRoutes);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');
