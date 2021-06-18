@@ -33,9 +33,15 @@ app.use((req,res,next)=>{
 // Routes http requests
 const blockRoutes = require('./routes/blocks');
 const transacitonRoutes = require('./routes/transactions');
+const clientRoutes = require('./routes/clients');
+const accountRoutes = require('./routes/accounts');
+const walletRoutes = require('./routes/wallets');
 
 app.use('/blocks', blockRoutes);
 app.use('/txs', transacitonRoutes);
+app.use('/clients', clientRoutes);
+app.use('/accounts', accountRoutes);
+app.use('/wallets', walletRoutes);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');

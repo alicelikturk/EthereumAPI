@@ -1,27 +1,27 @@
+const Web3 = require('web3');
 const mongoose = require("mongoose");
 const Block = require("../models/block");
-const Web3 = require('web3');
 const colors = require('colors');
 
-
-const urlMainnetHttp = "https://mainnet.infura.io/v3/190136ff7d0443d78170f57777111881";
-const urlMainnetWss = "wss://mainnet.infura.io/ws/v3/190136ff7d0443d78170f57777111881";
-const urlRopstenHttp = "https://ropsten.infura.io/v3/190136ff7d0443d78170f57777111881";
-const urlRopstenWSS= "wss://ropsten.infura.io/ws/v3/190136ff7d0443d78170f57777111881";
-const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(urlMainnetWss));
-
-
-var subscription = web3.eth.subscribe('newBlockHeaders');
+var subscription;
+const web3Model = require('../models/webTreeModel');
+web3Model.SetClient()
+    .then((url) => {
+        const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+        subscription = web3.eth.subscribe('newBlockHeaders');
+    });
+    
 
 exports.SubscribeNewBlockHeaders = (req, res, next) => {
     subscription.subscribe((error, result) => {
         if (!error) {
-            const blockMessage ='Block: '+result.number+' '+result.hash;
-            console.log(blockMessage.magenta);
+            const blockMessage = 'Block: ' + result.number + ' ' + result.hash;
+            console.log(blockMessage.bgGreen);
             const block = new Block({
-                _id:new mongoose.Types.ObjectId(),
+                _id: new mongoose.Types.ObjectId(),
                 number: result.number,
                 hash: result.hash,
+                timestamp: result.timestamp
             });
             block.save()
                 .then(_result => {
@@ -35,17 +35,16 @@ exports.SubscribeNewBlockHeaders = (req, res, next) => {
         }
     });
     res.status(200).json({
-        message:'Successfully subscribed'
+        message: 'Blocks successfully subscribed'
     });
 };
 exports.UnsubscribeNewBlockHeaders = (req, res, next) => {
-    
-    subscription.unsubscribe(function(error, success){
+    subscription.unsubscribe(function (error, success) {
         if (success) {
-            console.log('Successfully unsubscribed!');
+            console.log('Blocks successfully unsubscribed!');
         }
     });
     res.status(200).json({
-        message:'Successfully unsubscribed'
+        message: 'Blocks successfully unsubscribed'
     });
 };

@@ -1,0 +1,9 @@
+{
+    "env": {
+      "MAIN_NET_URL_WS": "ws://127.0.0.1:8006",
+      "TEST_NET_URL_WS": "ws://127.0.0.1:8016",
+      "MAIN_NET_URL_HTTP": "http://127.0.0.1:8005",
+      "TEST_NET_URL_HTTP": "http://127.0.0.1:8015",
+      "NEW_ACCOUNT_PSW": "TestPassword1234@"
+    }
+  }
