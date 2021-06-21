@@ -4,10 +4,14 @@ const accountController = require('../controllers/accountController');
 
 router.get('/', accountController.List);
 
-//router.post('/', blockController.Add);
+router.get('/wallet/:walletId', accountController.WalletAccoutList);
 
-//router.get('/:blockId', blockController.Get);
+router.post('/', accountController.Add);
 
-//router.delete('/:blockId', blockController.Delete);
+router.get('/:accountId', accountController.Get);
+
+router.get('/balance/:address', accountController.GetBalance);
+
+router.delete('/:accountId', accountController.Delete);
 
 module.exports = router;

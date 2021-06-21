@@ -57,7 +57,7 @@ exports.Create = (req, res, next) => {
 
                     const wallet = new Wallet({
                         _id: new mongoose.Types.ObjectId(),
-                        status: req.body.status,
+                        network: req.body.network,
                         name: req.body.name,
                         address: _wallet[0].address,
                         privateKey: _wallet[0].privateKey
@@ -70,7 +70,8 @@ exports.Create = (req, res, next) => {
                                 message: 'Wallet created',
                                 wallet: {
                                     name: wallet.name,
-                                    address: wallet.address
+                                    address: wallet.address,
+                                    network: wallet.network
                                 }
                             });
                         })
@@ -102,6 +103,40 @@ exports.Get = (req, res, next) => {
                     url: 'http://localhost:7079/wallets'
                 }
             });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
+exports.GetBalance = (req, res, next) => {
+    Wallet.findById(req.params.walletId)
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            web3.eth.getBalance(wallet.address, (error, result) => {
+                const balance = web3.utils.fromWei(result, 'ether');
+                res.status(200).json({
+                    wallet: {
+                        _Id:wallet._id,
+                        network:wallet.network,
+                        name:wallet.name,
+                        address:wallet.address,
+                        balance:balance
+                    },
+                    request: {
+                        type: 'GET',
+                        url: 'http://localhost:7079/wallets'
+                    }
+                });
+            });
+
         })
         .catch(err => {
             res.status(500).json({

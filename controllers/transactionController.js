@@ -3,23 +3,25 @@ const mongoose = require("mongoose");
 const Transaction = require("../models/transaction");
 const colors = require('colors');
 
+var web3;
 var subscription;
+
 const web3Model = require('../models/webTreeModel');
 web3Model.SetClient()
     .then((url) => {
-        const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+        web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
         subscription = web3.eth.subscribe('pendingTransactions');
     });
 
-exports.SubscribePendingTransactions = (req, res, next) => {
-    subscription.subscribe(async(error, result) => {
+exports.SubscribePendingTransactions = async (req, res, next) => {
+    subscription.subscribe(async (error, result) => {
         if (!error) {
-            const txMessage = 'Transaction: ' + result;
-            console.log(txMessage.gray);
-            const transaction = '';
+            // const txMessage = 'Transaction: ' + result;
+            // console.log(txMessage.gray);
+            //const transaction = '';
             // Infura istek limitini dolduruyor
-            //const transaction = await web3.eth.getTransaction(result);
-            if(transaction!=null){
+            const transaction = await web3.eth.getTransaction(result);
+            if (transaction != null) {
                 // const tx = new Transaction({
                 //     _id: new mongoose.Types.ObjectId(),
                 //     hash: transaction.hash,
@@ -32,18 +34,46 @@ exports.SubscribePendingTransactions = (req, res, next) => {
                 //     gas: transaction.gas,
                 //     gasPrice: transaction.gasPrice
                 // });
-                const tx = new Transaction({
-                    _id: new mongoose.Types.ObjectId(),
-                    hash: result
-                });
-                tx.save()
-                    .then(_result => {
-                        //console.log(result.hash);
-                        //console.log('Tx saved');
+                if (res.to == null) {
+                    return;
+                }
+                Account.findOne({ address: res.to })
+                    .exec()
+                    .then(account => {
+                        if (!account) {
+
+                        } else {
+                            const tx = new Transaction({
+                                _id: new mongoose.Types.ObjectId(),
+                                hash: result,
+                                date: new Date().getTime()
+                            });
+                            tx.save()
+                                .then(_result => {
+                                    //console.log(result.hash);
+                                    //console.log('Tx saved');
+                                    const txMessage = 'Transaction: ' + result;
+                                    console.log(txMessage.gray);
+                                })
+                                .catch(err => {
+                                    console.log(err);
+                                });
+                        }
                     })
                     .catch(err => {
-                        console.log(err);
+                        res.status(500).json({
+                            error: err
+                        });
                     });
+                // const transaction = await web3.eth.getTransaction(result).then((res) => {
+                //     if (res != null) {
+
+                //     } else {
+
+
+                //     }
+                // });
+
                 return;
             }
         }
@@ -62,4 +92,15 @@ exports.UnsubscribePendingTransactions = (req, res, next) => {
     res.status(200).json({
         message: 'Transactions successfully unsubscribed'
     });
+};
+
+exports.PendingTransactions = (req, res, next) => {
+    web3Model.SetClient()
+        .then((url) => {
+            const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+
+
+        });
+
+
 };

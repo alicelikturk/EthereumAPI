@@ -7,7 +7,7 @@ const SetClient = () => {
         Client.find({ isActive: true })
         .exec()
         .then(docs => {
-            resolve(docs[0].mainnetWss);
+            resolve(docs[0].ropstenWss);
         })
         .catch(err => {
             console.log(err);
