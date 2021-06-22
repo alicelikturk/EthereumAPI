@@ -6,6 +6,7 @@
 6- npm install --save morgan (to show every request in console ( for logs))
 7- npm install --save mongoose
 8- npm install colors
+9- npm install --save request (to send notify )
 
 ------------------------------
 1- npm init

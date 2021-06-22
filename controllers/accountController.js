@@ -18,7 +18,7 @@ exports.List = (req, res, next) => {
     } else {
         Account.find()
             .select('wallet address privateKey _id')
-            .populate('wallet', 'name network')
+            .populate('wallet', 'name notifyUrl network')
             .exec()
             .then(docs => {
                 const response = {
@@ -55,7 +55,7 @@ exports.WalletAccoutList = (req, res, next) => {
     } else {
         Account.find({wallet:req.params.walletId})
             .select('wallet address privateKey _id')
-            .populate('wallet', 'name network')
+            .populate('wallet', 'name network notifyUrl')
             .exec()
             .then(docs => {
                 const response = {
@@ -141,7 +141,7 @@ exports.Add = (req, res, next) => {
 
 exports.Get = (req, res, next) => {
     Account.findById(req.params.accountId)
-        .populate('wallet', 'name network')
+        .populate('wallet', 'name network notifyUrl')
         .exec()
         .then(account => {
             console.log(account);

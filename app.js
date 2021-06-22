@@ -12,12 +12,33 @@ mongoose.connect(URL, {
 });
 mongoose.Promise = global.Promise;
 
+//
+// Seed Data
+//
+const GlobalVariable = require("./models/globalVariable");
+GlobalVariable.findOne()
+    .then(gVar => {
+        if (gVar == null) {
+            const _gVar = new GlobalVariable({
+                _id: new mongoose.Types.ObjectId(),
+                confirmationCount: 3
+            });
+            _gVar
+                .save()
+                .then()
+                .catch();
+        }
+    });
+//
+// Seed Data
+//
+
 app.use(morgan('dev'));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use((req,res,next)=>{
+app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header(
         "Access-Control-Allow-Headers",
@@ -36,12 +57,16 @@ const transacitonRoutes = require('./routes/transactions');
 const clientRoutes = require('./routes/clients');
 const accountRoutes = require('./routes/accounts');
 const walletRoutes = require('./routes/wallets');
+const globalVariableRoutes = require('./routes/globalVariables');
+const notifyRoutes = require('./routes/notifies');
 
 app.use('/blocks', blockRoutes);
 app.use('/txs', transacitonRoutes);
 app.use('/clients', clientRoutes);
 app.use('/accounts', accountRoutes);
 app.use('/wallets', walletRoutes);
+app.use('/globalVariables', globalVariableRoutes);
+app.use('/notify', notifyRoutes);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');

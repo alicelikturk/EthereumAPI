@@ -57,8 +57,9 @@ exports.Create = (req, res, next) => {
 
                     const wallet = new Wallet({
                         _id: new mongoose.Types.ObjectId(),
-                        network: req.body.network,
                         name: req.body.name,
+                        notifyUrl: req.body.notifyUrl,
+                        network: req.body.network,
                         address: _wallet[0].address,
                         privateKey: _wallet[0].privateKey
                     });
@@ -70,6 +71,7 @@ exports.Create = (req, res, next) => {
                                 message: 'Wallet created',
                                 wallet: {
                                     name: wallet.name,
+                                    notifyUrl:wallet.notifyUrl,
                                     address: wallet.address,
                                     network: wallet.network
                                 }
@@ -125,8 +127,9 @@ exports.GetBalance = (req, res, next) => {
                 res.status(200).json({
                     wallet: {
                         _Id:wallet._id,
-                        network:wallet.network,
                         name:wallet.name,
+                        notifyUrl:wallet.notifyUrl,
+                        network:wallet.network,
                         address:wallet.address,
                         balance:balance
                     },
