@@ -42,15 +42,15 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                             const tx = new Transaction({
                                 _id: new mongoose.Types.ObjectId(),
                                 date: new Date().getTime(),
-                                hash: transaction.hash,
-                                blockNumber: transaction.blockNumber,
-                                blockHash: transaction.blockHash,
-                                transactionIndex: transaction.transactionIndex,
-                                from: transaction.from,
-                                to: transaction.to,
-                                value: transaction.value,
-                                gas: transaction.gas,
-                                gasPrice: transaction.gasPrice
+                                hash: transaction.hash
+                                // blockNumber: transaction.blockNumber,
+                                // blockHash: transaction.blockHash,
+                                // transactionIndex: transaction.transactionIndex,
+                                // from: transaction.from,
+                                // to: transaction.to,
+                                // value: transaction.value,
+                                // gas: transaction.gas,
+                                // gasPrice: transaction.gasPrice
                             });
                             tx.save()
                                 .then(_result => {
@@ -114,6 +114,7 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
         message: 'Transactions successfully subscribed'
     });
 };
+
 exports.UnsubscribePendingTransactions = (req, res, next) => {
 
     subscription.unsubscribe(function (error, success) {
