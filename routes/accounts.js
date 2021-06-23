@@ -6,6 +6,8 @@ router.get('/', accountController.List);
 
 router.get('/wallet/:walletId', accountController.WalletAccoutList);
 
+router.get('/isAddress/:address', accountController.IsAddress);
+
 router.post('/', accountController.Add);
 
 router.get('/:accountId', accountController.Get);

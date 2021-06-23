@@ -53,14 +53,14 @@ exports.WalletAccoutList = (req, res, next) => {
     if (isLocalNode) {
         // **TR** Local bir düğüm de kullanılsa bile  web3.eth.getAccounts kullanılmayacak
     } else {
-        Account.find({wallet:req.params.walletId})
+        Account.find({ wallet: req.params.walletId })
             .select('wallet address privateKey _id')
             .populate('wallet', 'name network notifyUrl')
             .exec()
             .then(docs => {
                 const response = {
                     count: docs.length,
-                    wallet:docs[0].wallet,
+                    wallet: docs[0].wallet,
                     accounts: docs.map(doc => {
                         return {
                             _id: doc._id,
@@ -83,6 +83,15 @@ exports.WalletAccoutList = (req, res, next) => {
             });
     }
 
+};
+
+exports.IsAddress = (req, res, next) => {
+    const address = req.params.address;
+    var isaddress = web3.utils.isAddress(address);
+    res.status(200).json({
+        result: isaddress,
+        address: address
+    });
 };
 
 exports.Add = (req, res, next) => {
@@ -185,7 +194,7 @@ exports.GetBalance = (req, res, next) => {
                             url: 'http://localhost:7079/accounts/'
                         }
                     });
-                }else{
+                } else {
                     res.status(200).json({
                         account: {
                             _Id: account._id,
@@ -194,11 +203,11 @@ exports.GetBalance = (req, res, next) => {
                         },
                         request: {
                             type: 'GET',
-                            url: 'http://localhost:7079/accounts/wallet/'+account.wallet._id
+                            url: 'http://localhost:7079/accounts/wallet/' + account.wallet._id
                         }
                     });
                 }
-                
+
             })
             .catch(err => {
                 res.status(500).json({

@@ -6,7 +6,6 @@ const GlobalVariable = require("../models/globalVariable");
 const colors = require('colors');
 const request = require("request");
 
-var gVar;
 var web3;
 var subscription;
 
