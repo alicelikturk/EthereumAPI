@@ -58,12 +58,12 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                                         '\tto address: ' + transaction.to +
                                         '\tvalue: ' + transaction.value + ' wei'));
                                     var postData = {
-                                        "txHash": transaction.hash,
-                                        "to": transaction.to,
-                                        "value": transaction.value,
-                                        "from": transaction.from,
-                                        "confirmation": 0,
-                                        "asset": "eth"
+                                        txHash: transaction.hash,
+                                        to: transaction.to,
+                                        value: web3.utils.fromWei(transaction.value, 'ether'),
+                                        from: transaction.from,
+                                        confirmation: 0,
+                                        asset: "eth"
                                     }
                                     request({
                                         uri: account.wallet.notifyUrl,
@@ -156,12 +156,12 @@ async function confirmEtherTransaction(txHash, confirmationCount, asset, url) {
         console.log(colors.bgBlack.white(confirmationCount));
         if (txConfirmation.confirmation >= confirmationCount) {
             var postData = {
-                "txHash": txConfirmation.tx.hash,
-                "to": txConfirmation.tx.to,
-                "value": txConfirmation.tx.value,
-                "from": txConfirmation.tx.from,
-                "confirmation": txConfirmation.confirmation,
-                "asset": asset
+                txHash: txConfirmation.tx.hash,
+                to: txConfirmation.tx.to,
+                value: web3.utils.fromWei(txConfirmation.tx.value, 'ether'),
+                from: txConfirmation.tx.from,
+                confirmation: txConfirmation.confirmation,
+                asset: asset
             }
             request({
                 uri: url,

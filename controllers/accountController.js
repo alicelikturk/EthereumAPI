@@ -85,15 +85,6 @@ exports.WalletAccoutList = (req, res, next) => {
 
 };
 
-exports.IsAddress = (req, res, next) => {
-    const address = req.params.address;
-    var isaddress = web3.utils.isAddress(address);
-    res.status(200).json({
-        result: isaddress,
-        address: address
-    });
-};
-
 exports.Add = (req, res, next) => {
     const id = req.body.walletId;
     Wallet.findById(id)

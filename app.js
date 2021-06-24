@@ -58,6 +58,7 @@ const clientRoutes = require('./routes/clients');
 const accountRoutes = require('./routes/accounts');
 const walletRoutes = require('./routes/wallets');
 const globalVariableRoutes = require('./routes/globalVariables');
+const ethRoutes = require('./routes/eth');
 const notifyRoutes = require('./routes/notifies');
 
 app.use('/blocks', blockRoutes);
@@ -66,6 +67,7 @@ app.use('/clients', clientRoutes);
 app.use('/accounts', accountRoutes);
 app.use('/wallets', walletRoutes);
 app.use('/globalVariables', globalVariableRoutes);
+app.use('/eth', ethRoutes);
 app.use('/notify', notifyRoutes);
 
 app.use((req, res, next) => {
