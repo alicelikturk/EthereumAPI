@@ -49,28 +49,82 @@ exports.GetTransaction = (req, res, next) => {
 };
 
 exports.SendTo = (req, res, next) => {
-    const amount = req.body.amount;
-    const toAddress = req.body.address;
-    const txObject = {
-        to: toAddress,
-        value: web3.utils.toWei(amount.toString(), 'ether'), // in wei
-        //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-        gas: 21000
-    };
-    web3.eth.accounts.signTransaction(txObject, '0xa228fba400d074bbb960f604cf8939f149c9a4670e69c1ce05e48e2b3f4d3b69').then((result, error) => {
-        web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-            console.log(err);
-            console.log(txHash);
-            res.status(200).json({
-                txHash:txHash
+    const walletId = req.body.walletId;
+    Wallet.findById(walletId)
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: "Wallet not found",
+                    id: id
+                });
+            }
+            const amount = req.body.amount;
+            const toAddress = req.body.address;
+            const txObject = {
+                to: toAddress,
+                value: web3.utils.toWei(amount.toString(), 'ether'), // in wei
+                //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                gas: 21000
+            };
+            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                    if (err) {
+                        return res.status(404).json({
+                            txHash: null,
+                            error: "sendSignedTransaction error"
+                        });
+                    }
+                    return res.status(200).json({
+                        txHash: txHash
+                    });
+                });
             });
+
         });
-    });
 };
 
 exports.MoveTo = (req, res, next) => {
-    res.status(200).json({
-        result:'move'
-    });
+    const walletId = req.params.walletId;
+    Account.find({ wallet: walletId })
+        .exec()
+        .then(docs => {
+            docs.forEach(doc => {
+                web3.eth.accounts.wallet.add(doc.privateKey);
+            });
+            console.log(web3.eth.accounts.wallet);
+            const amount = req.body.amount;
+            const toAddress = req.body.address;
+            const txObject = {
+                from: 0,
+                to: toAddress,
+                value: web3.utils.toWei(amount.toString(), 'ether'), // in wei
+                //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                gas: 21000
+            };
+            console.log(txObject);
+            web3.eth.sendTransaction(txObject, (_err, _res) => {
+                if (_err)
+                    console.log(_err);
+                res.status(200).json({
+                    result: _res
+                });
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(200).json({
+                result: err
+            });
+        });
+
 };
 
+exports.WalletAccounts = (req, res, next) => {
+    const walletId = req.params.walletId;
+    let wallet = web3.eth.accounts.wallet;
+    console.log("wallet".yellow);
+    console.log(wallet);
+    res.status(200).json({
+        wallet: wallet
+    });
+};

@@ -48,7 +48,7 @@ exports.List = (req, res, next) => {
 
 };
 
-exports.WalletAccoutList = (req, res, next) => {
+exports.WalletAccountList = (req, res, next) => {
     const isLocalNode = false;
     if (isLocalNode) {
         // **TR** Local bir düğüm de kullanılsa bile  web3.eth.getAccounts kullanılmayacak

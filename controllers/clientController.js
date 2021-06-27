@@ -90,9 +90,12 @@ exports.Delete = (req, res, next) => {
                     url: 'http://localhost:7079/clients',
                     data: {
                         name: 'String',
-                        mainnetHttp: 'String', ropstenHttp: 'String',
-                        mainnetWss: 'String', ropstenWss: 'String',
-                        mainnetIpc: 'String', ropstenIpc: 'String',
+                        mainnetHttp: 'String',
+                        ropstenHttp: 'String',
+                        mainnetWss: 'String',
+                        ropstenWss: 'String',
+                        mainnetIpc: 'String',
+                        ropstenIpc: 'String',
                     }
                 }
             });
@@ -116,16 +119,16 @@ exports.Update = (req, res, next) => {
         });
     }
     Client.updateMany({ isActive: true }, {
-        isActive: false
-    })
+            isActive: false
+        })
         .exec()
         .then(result => {
             console.log("others deactived");
         });
 
     Client.updateOne({ name: updateOps["name"] }, {
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({

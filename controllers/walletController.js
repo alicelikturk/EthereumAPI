@@ -71,7 +71,7 @@ exports.Create = (req, res, next) => {
                                 message: 'Wallet created',
                                 wallet: {
                                     name: wallet.name,
-                                    notifyUrl:wallet.notifyUrl,
+                                    notifyUrl: wallet.notifyUrl,
                                     address: wallet.address,
                                     network: wallet.network
                                 }
@@ -126,12 +126,12 @@ exports.GetBalance = (req, res, next) => {
                 const balance = web3.utils.fromWei(result, 'ether');
                 res.status(200).json({
                     wallet: {
-                        _Id:wallet._id,
-                        name:wallet.name,
-                        notifyUrl:wallet.notifyUrl,
-                        network:wallet.network,
-                        address:wallet.address,
-                        balance:balance
+                        _Id: wallet._id,
+                        name: wallet.name,
+                        notifyUrl: wallet.notifyUrl,
+                        network: wallet.network,
+                        address: wallet.address,
+                        balance: balance
                     },
                     request: {
                         type: 'GET',
@@ -171,8 +171,8 @@ exports.Update = (req, res, next) => {
         updateOps[key] = req.body[key];
     }
     Wallet.updateOne({ _id: id }, {
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({

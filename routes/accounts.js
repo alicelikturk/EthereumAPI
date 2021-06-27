@@ -4,7 +4,7 @@ const accountController = require('../controllers/accountController');
 
 router.get('/', accountController.List);
 
-router.get('/wallet/:walletId', accountController.WalletAccoutList);
+router.get('/wallet/:walletId', accountController.WalletAccountList);
 
 router.post('/', accountController.Add);
 

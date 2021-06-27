@@ -8,7 +8,8 @@ router.get('/tx/:txHash', ethController.GetTransaction);
 
 router.post('/send', ethController.SendTo);
 
-router.post('/move', ethController.MoveTo);
+router.post('/move/:walletId', ethController.MoveTo);
+router.post('/walletaccounts/:walletId', ethController.WalletAccounts);
 
 
 module.exports = router;
