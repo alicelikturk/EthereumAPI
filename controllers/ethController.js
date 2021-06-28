@@ -50,6 +50,8 @@ exports.GetTransaction = (req, res, next) => {
 
 exports.SendTo = (req, res, next) => {
     const walletId = req.body.walletId;
+    const amount = req.body.amount;
+    const toAddress = req.body.address;
     Wallet.findById(walletId)
         .then(wallet => {
             if (!wallet) {
@@ -58,65 +60,75 @@ exports.SendTo = (req, res, next) => {
                     id: id
                 });
             }
-            const amount = req.body.amount;
-            const toAddress = req.body.address;
-            const txObject = {
-                to: toAddress,
-                value: web3.utils.toWei(amount.toString(), 'ether'), // in wei
-                //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                gas: 21000
-            };
-            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                    if (err) {
+            web3.eth.getBalance(wallet.address, (errBalance, balance) => {
+                console.log('Wallet Balance: ' + balance + ' wei');
+                web3.eth.getGasPrice().then((gasPrice) => {
+                    console.log('Gas Price: ' + gasPrice + ' wei');
+                    const txFee = gasPrice * 21000;
+                    console.log('Tx Fee: ' + txFee + ' wei');
+                    let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
+                    console.log('value: ' + value + ' wei');
+                    value = value - txFee;
+                    if (balance >= txFee + value) {
+                        const txObject = {
+                            to: toAddress,
+                            value: value, // in wei
+                            //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                            gas: 21000
+                        };
+                        web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                            web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                if (err) {
+                                    console.log(err);
+                                    return res.status(404).json({
+                                        txHash: null,
+                                        error: "SendTo sendSignedTransaction error"
+                                    });
+                                }
+                                return res.status(200).json({
+                                    txHash: txHash
+                                });
+                            });
+                        });
+                    } else {
+                        console.log("Insufficient funds for gas * price + value");
                         return res.status(404).json({
                             txHash: null,
-                            error: "sendSignedTransaction error"
+                            error: "Insufficient funds for gas * price + value"
                         });
                     }
-                    return res.status(200).json({
-                        txHash: txHash
-                    });
                 });
             });
-
         });
 };
 
 exports.MoveTo = (req, res, next) => {
-    const walletId = req.params.walletId;
-    Account.find({ wallet: walletId })
-        .exec()
-        .then(docs => {
-            docs.forEach(doc => {
-                web3.eth.accounts.wallet.add(doc.privateKey);
-            });
-            console.log(web3.eth.accounts.wallet);
-            const amount = req.body.amount;
-            const toAddress = req.body.address;
-            const txObject = {
-                from: 0,
-                to: toAddress,
-                value: web3.utils.toWei(amount.toString(), 'ether'), // in wei
-                //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                gas: 21000
-            };
-            console.log(txObject);
-            web3.eth.sendTransaction(txObject, (_err, _res) => {
-                if (_err)
-                    console.log(_err);
-                res.status(200).json({
-                    result: _res
-                });
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(200).json({
-                result: err
-            });
+    var abiERC20 = require('../abiERC20.json');
+    const newContract = new web3.eth.Contract(abiERC20, "0x455252ad19fee2d26b1a91a9b20d8b0aa112d245");
+    console.log(newContract._jsonInterface)
+    const eventInterface = newContract._jsonInterface.find(x => x.name === 'Transfer' && x.type === 'event');
+
+        const from_param = eventInterface.inputs[0].name;
+        const to_param = eventInterface.inputs[1].name;
+        const value_param = eventInterface.inputs[2].name;
+
+        const options = {
+            filter: {
+                _from: '',
+                _to: '',
+                _value: ''
+            },
+            fromBlock: 'latest'
+        };
+        console.log('0x455252ad19fee2d26b1a91a9b20d8b0aa112d245' + ' listening...');
+        newContract.events.Transfer(options, (error, result) => {
+            console.log('\x1b[31m%s\x1b[0m', 'Token Triggered');
+            console.log(result);
         });
 
+    res.status(200).json({
+        result: "test"
+    });
 };
 
 exports.WalletAccounts = (req, res, next) => {

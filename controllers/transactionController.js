@@ -17,8 +17,8 @@ web3Model.SetClient()
 
     });
 
-exports.SubscribePendingTransactions = async(req, res, next) => {
-    subscription.subscribe(async(error, result) => {
+exports.SubscribePendingTransactions = async (req, res, next) => {
+    subscription.subscribe(async (error, result) => {
         if (!error) {
             // Infura istek limitini dolduruyor
             const transaction = await web3.eth.getTransaction(result);
@@ -42,14 +42,14 @@ exports.SubscribePendingTransactions = async(req, res, next) => {
                                 _id: new mongoose.Types.ObjectId(),
                                 date: new Date().getTime(),
                                 hash: transaction.hash
-                                    // blockNumber: transaction.blockNumber,
-                                    // blockHash: transaction.blockHash,
-                                    // transactionIndex: transaction.transactionIndex,
-                                    // from: transaction.from,
-                                    // to: transaction.to,
-                                    // value: transaction.value,
-                                    // gas: transaction.gas,
-                                    // gasPrice: transaction.gasPrice
+                                // blockNumber: transaction.blockNumber,
+                                // blockHash: transaction.blockHash,
+                                // transactionIndex: transaction.transactionIndex,
+                                // from: transaction.from,
+                                // to: transaction.to,
+                                // value: transaction.value,
+                                // gas: transaction.gas,
+                                // gasPrice: transaction.gasPrice
                             });
                             tx.save()
                                 .then(_result => {
@@ -73,7 +73,7 @@ exports.SubscribePendingTransactions = async(req, res, next) => {
                                         headers: {
                                             'Content-Type': 'application/json'
                                         }
-                                    }, function(error, response, body) {
+                                    }, function (error, response, body) {
                                         if (error) {
                                             console.log(colors.bgWhite.black('Deposit Notify ERROR' +
                                                 '\terror: ' + error));
@@ -87,10 +87,10 @@ exports.SubscribePendingTransactions = async(req, res, next) => {
                                     GlobalVariable.findOne()
                                         .exec()
                                         .then(_gVar => {
-                                            confirmEtherTransaction(result, _gVar.confirmationCount, 'eth', account.wallet.notifyUrl);
+                                            confirmEtherTransaction(result, _gVar, 'eth', account);
                                         })
                                         .catch(err => {
-                                            confirmEtherTransaction(result, 3, 'eth', account.wallet.notifyUrl);
+                                            confirmEtherTransaction(result, null, 'eth', account);
                                         });
 
                                 })
@@ -116,7 +116,7 @@ exports.SubscribePendingTransactions = async(req, res, next) => {
 
 exports.UnsubscribePendingTransactions = (req, res, next) => {
 
-    subscription.unsubscribe(function(error, success) {
+    subscription.unsubscribe(function (error, success) {
         if (success) {
             console.log('Transactions successfully unsubscribed!');
         }
@@ -149,11 +149,14 @@ async function getConfirmations(txHash) {
     }
 }
 
-async function confirmEtherTransaction(txHash, confirmationCount, asset, url) {
-    var intervalId = setInterval(async() => {
+async function confirmEtherTransaction(txHash, gVar, asset, account) {
+    const confirmationCount = gVar ? gVar.confirmationCount : 3;
+    const url = account.wallet.notifyUrl;
+
+    var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
-        console.log(colors.bgBlack.white(txConfirmation.confirmation));
-        console.log(colors.bgBlack.white(confirmationCount));
+        console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
+
         if (txConfirmation.confirmation >= confirmationCount) {
             var postData = {
                 txHash: txConfirmation.tx.hash,
@@ -171,7 +174,7 @@ async function confirmEtherTransaction(txHash, confirmationCount, asset, url) {
                 headers: {
                     'Content-Type': 'application/json'
                 }
-            }, function(error, response, body) {
+            }, function (error, response, body) {
                 if (error) {
                     console.log(colors.bgWhite.black('Deposit Confirmation Notify ERROR' +
                         '\terror: ' + error));
@@ -181,8 +184,40 @@ async function confirmEtherTransaction(txHash, confirmationCount, asset, url) {
                         '\tresponse: ' + response.body));
                 }
             });
+            // Automatically moving eth from account to wallet address
+            const autoMoving = gVar ? gVar.autoMoving : false;
+            if (autoMoving)
+                MoveEth(account);
+
             clearInterval(intervalId);
 
         }
     }, 5 * 1000)
+}
+
+async function MoveEth(account) {
+    const accountAddress = account.address;
+    const accountPrivateKey = account.privateKey;
+    const walletAddress = account.wallet.address;
+    web3.eth.getBalance(accountAddress, (errBalance, balance) => {
+        web3.eth.getGasPrice().then((gasPrice) => {
+            const txFee = gasPrice * 21000;
+            if (balance > txFee) {
+                const txObject = {
+                    to: walletAddress,
+                    value: balance - txFee, // in wei
+                    //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                    gas: 21000
+                };
+                web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
+                    web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                        if (err)
+                            console.log('error: MoveEth sendSignedTransaction error');
+                        else
+                            console.log(colors.bgCyan.white('Move Tx : ' + txHash));
+                    });
+                });
+            }
+        });
+    });
 }

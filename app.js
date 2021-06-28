@@ -21,7 +21,8 @@ GlobalVariable.findOne()
         if (gVar == null) {
             const _gVar = new GlobalVariable({
                 _id: new mongoose.Types.ObjectId(),
-                confirmationCount: 3
+                confirmationCount: 3,
+                autoMoving: false
             });
             _gVar
                 .save()

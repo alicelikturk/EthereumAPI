@@ -8,7 +8,8 @@ exports.List = (req, res, next) => {
             const response = {
                 globalVariable: {
                     _id:gVar._id,
-                    confirmationCount:gVar.confirmationCount
+                    confirmationCount:gVar.confirmationCount,
+                    autoMoving:gVar.autoMoving
                 }
             };
             res.status(200).json(response);
