@@ -6,7 +6,7 @@ const Wallet = require("../models/wallet");
 const colors = require('colors');
 
 var web3;
-const web3Model = require('../models/webTreeModel');
+const web3Model = require('../models/webThreeModel');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -56,8 +56,8 @@ exports.SendTo = (req, res, next) => {
         .then(wallet => {
             if (!wallet) {
                 return res.status(404).json({
-                    message: "Wallet not found",
-                    id: id
+                    txHash: null,
+                    message: "Wallet not found"
                 });
             }
             web3.eth.getBalance(wallet.address, (errBalance, balance) => {
@@ -103,29 +103,6 @@ exports.SendTo = (req, res, next) => {
 };
 
 exports.MoveTo = (req, res, next) => {
-    var abiERC20 = require('../abiERC20.json');
-    const newContract = new web3.eth.Contract(abiERC20, "0x455252ad19fee2d26b1a91a9b20d8b0aa112d245");
-    console.log(newContract._jsonInterface)
-    const eventInterface = newContract._jsonInterface.find(x => x.name === 'Transfer' && x.type === 'event');
-
-        const from_param = eventInterface.inputs[0].name;
-        const to_param = eventInterface.inputs[1].name;
-        const value_param = eventInterface.inputs[2].name;
-
-        const options = {
-            filter: {
-                _from: '',
-                _to: '',
-                _value: ''
-            },
-            fromBlock: 'latest'
-        };
-        console.log('0x455252ad19fee2d26b1a91a9b20d8b0aa112d245' + ' listening...');
-        newContract.events.Transfer(options, (error, result) => {
-            console.log('\x1b[31m%s\x1b[0m', 'Token Triggered');
-            console.log(result);
-        });
-
     res.status(200).json({
         result: "test"
     });

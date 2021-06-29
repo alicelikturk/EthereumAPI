@@ -2,6 +2,7 @@ const Web3 = require('web3');
 const mongoose = require("mongoose");
 const Transaction = require("../models/transaction");
 const Account = require("../models/account");
+const Wallet = require("../models/wallet");
 const GlobalVariable = require("../models/globalVariable");
 const colors = require('colors');
 const request = require("request");
@@ -9,7 +10,7 @@ const request = require("request");
 var web3;
 var subscription;
 
-const web3Model = require('../models/webTreeModel');
+const web3Model = require('../models/webThreeModel');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -23,12 +24,11 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
             // Infura istek limitini dolduruyor
             const transaction = await web3.eth.getTransaction(result);
             if (transaction != null) {
-                console.log(colors.gray('tx hash: ' + result));
                 // to - String: Address of the receiver. null if it’s a contract creation transaction.
                 if (transaction.to == null) {
-                    console.log(colors.bgGreen.black('Contract Creation' +
-                        '\ntx to : ' + transaction.to +
-                        '\ntx hash: ' + result));
+                    // console.log(colors.bgGreen.black('Contract Creation' +
+                    //     '\ntx to : ' + transaction.to +
+                    //     '\ntx hash: ' + result));
                     return;
                 }
                 Account.findOne({ address: transaction.to })
@@ -38,29 +38,26 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                         if (!account) {
 
                         } else {
+                            const valueEther = web3.utils.fromWei(transaction.value, 'ether');
+
+                            console.log(colors.gray('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
+
                             const tx = new Transaction({
                                 _id: new mongoose.Types.ObjectId(),
                                 date: new Date().getTime(),
-                                hash: transaction.hash
-                                // blockNumber: transaction.blockNumber,
-                                // blockHash: transaction.blockHash,
-                                // transactionIndex: transaction.transactionIndex,
-                                // from: transaction.from,
-                                // to: transaction.to,
-                                // value: transaction.value,
-                                // gas: transaction.gas,
-                                // gasPrice: transaction.gasPrice
+                                hash: transaction.hash,
+                                isContract: false
                             });
                             tx.save()
                                 .then(_result => {
-                                    console.log(colors.bgCyan.black('Deposit' +
-                                        '\ttx saved: ' + transaction.hash +
-                                        '\tto address: ' + transaction.to +
-                                        '\tvalue: ' + transaction.value + ' wei'));
+                                    // console.log(colors.bgCyan.black('Deposit' +
+                                    //     '\ttx saved: ' + transaction.hash +
+                                    //     '\tto address: ' + transaction.to +
+                                    //     '\tvalue: ' + transaction.value + ' wei'));
                                     var postData = {
                                         txHash: transaction.hash,
                                         to: transaction.to,
-                                        value: web3.utils.fromWei(transaction.value, 'ether'),
+                                        value: valueEther,
                                         from: transaction.from,
                                         confirmation: 0,
                                         asset: "eth"
@@ -74,13 +71,14 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                                             'Content-Type': 'application/json'
                                         }
                                     }, function (error, response, body) {
+                                        console.log(colors.cyan('Deposit ether notification request \t' +
+                                            '{' + account.wallet.notifyUrl + '}' + ' sent'));
                                         if (error) {
-                                            console.log(colors.bgWhite.black('Deposit Notify ERROR' +
-                                                '\terror: ' + error));
+                                            console.log(colors.magenta('Deposit ether notification error \t' +
+                                                JSON.stringify(error)));
                                         } else {
-                                            console.log(colors.bgWhite.black('Deposit Notify RESPONSE' +
-                                                '\trequest url: ' + account.wallet.notifyUrl +
-                                                '\tresponse: ' + response.body));
+                                            console.log(colors.white('Deposit ether notification response \t' +
+                                                JSON.stringify(response.body)));
                                         }
                                     });
 
@@ -100,7 +98,8 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                         }
                     })
                     .catch(err => {
-                        res.status(500).json({
+                        return res.status(500).json({
+                            result: false,
                             error: err
                         });
                     });
@@ -108,8 +107,9 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
             }
         }
     });
-
-    res.status(200).json({
+    console.log('eth subscribed');
+    return res.status(200).json({
+        result: true,
         message: 'Transactions successfully subscribed'
     });
 };
@@ -155,13 +155,17 @@ async function confirmEtherTransaction(txHash, gVar, asset, account) {
 
     var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
-        console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
+        //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
 
         if (txConfirmation.confirmation >= confirmationCount) {
+            const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
+
+            console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
+
             var postData = {
                 txHash: txConfirmation.tx.hash,
                 to: txConfirmation.tx.to,
-                value: web3.utils.fromWei(txConfirmation.tx.value, 'ether'),
+                value: valueEther,
                 from: txConfirmation.tx.from,
                 confirmation: txConfirmation.confirmation,
                 asset: asset
@@ -175,13 +179,14 @@ async function confirmEtherTransaction(txHash, gVar, asset, account) {
                     'Content-Type': 'application/json'
                 }
             }, function (error, response, body) {
+                console.log(colors.cyan('Deposit ether confirmation notification request \t' +
+                    '{' + url + '}' + ' sent'));
                 if (error) {
-                    console.log(colors.bgWhite.black('Deposit Confirmation Notify ERROR' +
-                        '\terror: ' + error));
+                    console.log(colors.magenta('Deposit ether confirmation notification error \t' +
+                        JSON.stringify(error)));
                 } else {
-                    console.log(colors.bgWhite.black('Deposit Confirmation Notify RESPONSE' +
-                        '\trequest url: ' + url +
-                        '\tresponse: ' + response.body));
+                    console.log(colors.white('Deposit ether confirmation notification response \t' +
+                        JSON.stringify(response.body)));
                 }
             });
             // Automatically moving eth from account to wallet address
@@ -203,18 +208,23 @@ async function MoveEth(account) {
         web3.eth.getGasPrice().then((gasPrice) => {
             const txFee = gasPrice * 21000;
             if (balance > txFee) {
+                const transferValue = balance - txFee;
                 const txObject = {
                     to: walletAddress,
-                    value: balance - txFee, // in wei
+                    value: transferValue, // in wei
                     //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
                     gas: 21000
                 };
                 web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
                     web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                        if (err)
-                            console.log('error: MoveEth sendSignedTransaction error');
-                        else
-                            console.log(colors.bgCyan.white('Move Tx : ' + txHash));
+                        if (err) {
+                            console.log(colors.red('error: MoveEth sendSignedTransaction error'));
+                            console.log(err);
+                        }
+                        else {
+                            const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
+                            console.log(colors.blue('Ether moved to: ' + walletAddress + ' , ' + valueEther + ' Ether' + ' , ' + txHash));
+                        }
                     });
                 });
             }

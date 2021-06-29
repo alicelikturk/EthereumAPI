@@ -4,7 +4,7 @@ const Block = require("../models/block");
 const colors = require('colors');
 
 var subscription;
-const web3Model = require('../models/webTreeModel');
+const web3Model = require('../models/webThreeModel');
 web3Model.SetClient()
     .then((url) => {
         const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));

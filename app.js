@@ -60,6 +60,7 @@ const accountRoutes = require('./routes/accounts');
 const walletRoutes = require('./routes/wallets');
 const globalVariableRoutes = require('./routes/globalVariables');
 const ethRoutes = require('./routes/eth');
+const contractRoutes = require('./routes/contracts');
 const notifyRoutes = require('./routes/notifies');
 
 app.use('/blocks', blockRoutes);
@@ -69,6 +70,7 @@ app.use('/accounts', accountRoutes);
 app.use('/wallets', walletRoutes);
 app.use('/globalVariables', globalVariableRoutes);
 app.use('/eth', ethRoutes);
+app.use('/contracts', contractRoutes);
 app.use('/notify', notifyRoutes);
 
 app.use((req, res, next) => {
@@ -79,6 +81,7 @@ app.use((req, res, next) => {
 });
 
 app.use((error, req, res, next) => {
+    console.log(error);
     res.status(error.status || 500);
     res.json({
         error: {

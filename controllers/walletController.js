@@ -3,7 +3,7 @@ const Web3 = require('web3');
 const Wallet = require("../models/wallet");
 
 var web3;
-const web3Model = require('../models/webTreeModel');
+const web3Model = require('../models/webThreeModel');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
