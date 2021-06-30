@@ -5,9 +5,10 @@ const contractSchema = mongoose.Schema({
     standart: { type: String },
     symbol: { type: String },
     name: { type: String },
+    assetMoveLimit: { type: Number, default: 100 },
     contractAddress: { type: String },
     abi: { type: String },
-    isActive: { type: Boolean, default: true } 
+    isActive: { type: Boolean, default: true }
 });
 
 module.exports = mongoose.model('ContractVariable', contractSchema);

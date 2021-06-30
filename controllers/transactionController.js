@@ -21,90 +21,97 @@ web3Model.SetClient()
 exports.SubscribePendingTransactions = async (req, res, next) => {
     subscription.subscribe(async (error, result) => {
         if (!error) {
-            // Infura istek limitini dolduruyor
-            const transaction = await web3.eth.getTransaction(result);
-            if (transaction != null) {
-                // to - String: Address of the receiver. null if it’s a contract creation transaction.
-                if (transaction.to == null) {
-                    // console.log(colors.bgGreen.black('Contract Creation' +
-                    //     '\ntx to : ' + transaction.to +
-                    //     '\ntx hash: ' + result));
-                    return;
-                }
-                Account.findOne({ address: transaction.to })
-                    .populate('wallet')
-                    .exec()
-                    .then(account => {
-                        if (!account) {
+            try {
+                // Infura istek limitini dolduruyor
+                const transaction = await web3.eth.getTransaction(result);
+                if (transaction != null) {
+                    // to - String: Address of the receiver. null if it’s a contract creation transaction.
+                    if (transaction.to == null) {
+                        // console.log(colors.bgGreen.black('Contract Creation' +
+                        //     '\ntx to : ' + transaction.to +
+                        //     '\ntx hash: ' + result));
+                        return;
+                    }
 
-                        } else {
-                            const valueEther = web3.utils.fromWei(transaction.value, 'ether');
+                    Account.findOne({ address: transaction.to })
+                        .populate('wallet')
+                        .exec()
+                        .then(account => {
+                            if (!account) {
 
-                            console.log(colors.gray('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
+                            } else {
+                                const valueEther = web3.utils.fromWei(transaction.value, 'ether');
 
-                            const tx = new Transaction({
-                                _id: new mongoose.Types.ObjectId(),
-                                date: new Date().getTime(),
-                                hash: transaction.hash,
-                                isContract: false
-                            });
-                            tx.save()
-                                .then(_result => {
-                                    // console.log(colors.bgCyan.black('Deposit' +
-                                    //     '\ttx saved: ' + transaction.hash +
-                                    //     '\tto address: ' + transaction.to +
-                                    //     '\tvalue: ' + transaction.value + ' wei'));
-                                    var postData = {
-                                        txHash: transaction.hash,
-                                        to: transaction.to,
-                                        value: valueEther,
-                                        from: transaction.from,
-                                        confirmation: 0,
-                                        asset: "eth"
-                                    }
-                                    request({
-                                        uri: account.wallet.notifyUrl,
-                                        method: "POST",
-                                        body: JSON.stringify(postData),
-                                        rejectUnauthorized: false,
-                                        headers: {
-                                            'Content-Type': 'application/json'
+                                console.log(colors.gray('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
+
+                                const tx = new Transaction({
+                                    _id: new mongoose.Types.ObjectId(),
+                                    date: new Date().getTime(),
+                                    hash: transaction.hash,
+                                    isContract: false
+                                });
+                                tx.save()
+                                    .then(_result => {
+                                        // console.log(colors.bgCyan.black('Deposit' +
+                                        //     '\ttx saved: ' + transaction.hash +
+                                        //     '\tto address: ' + transaction.to +
+                                        //     '\tvalue: ' + transaction.value + ' wei'));
+                                        var postData = {
+                                            txHash: transaction.hash,
+                                            to: transaction.to,
+                                            value: valueEther,
+                                            from: transaction.from,
+                                            confirmation: 0,
+                                            asset: "eth"
                                         }
-                                    }, function (error, response, body) {
-                                        console.log(colors.cyan('Deposit ether notification request \t' +
-                                            '{' + account.wallet.notifyUrl + '}' + ' sent'));
-                                        if (error) {
-                                            console.log(colors.magenta('Deposit ether notification error \t' +
-                                                JSON.stringify(error)));
-                                        } else {
-                                            console.log(colors.white('Deposit ether notification response \t' +
-                                                JSON.stringify(response.body)));
-                                        }
-                                    });
-
-                                    GlobalVariable.findOne()
-                                        .exec()
-                                        .then(_gVar => {
-                                            confirmEtherTransaction(result, _gVar, 'eth', account);
-                                        })
-                                        .catch(err => {
-                                            confirmEtherTransaction(result, null, 'eth', account);
+                                        request({
+                                            uri: account.wallet.notifyUrl,
+                                            method: "POST",
+                                            body: JSON.stringify(postData),
+                                            rejectUnauthorized: false,
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            }
+                                        }, function (error, response, body) {
+                                            console.log(colors.cyan('Deposit ether notification request \t' +
+                                                '{' + account.wallet.notifyUrl + '}' + ' sent'));
+                                            if (error) {
+                                                console.log(colors.magenta('Deposit ether notification error \t' +
+                                                    JSON.stringify(error)));
+                                            } else {
+                                                console.log(colors.white('Deposit ether notification response \t' +
+                                                    JSON.stringify(response.body)));
+                                            }
                                         });
 
-                                })
-                                .catch(err => {
-                                    console.log(err);
-                                });
-                        }
-                    })
-                    .catch(err => {
-                        return res.status(500).json({
-                            result: false,
-                            error: err
+                                        GlobalVariable.findOne()
+                                            .exec()
+                                            .then(_gVar => {
+                                                confirmEtherTransaction(result, _gVar, 'eth', account);
+                                            })
+                                            .catch(err => {
+                                                confirmEtherTransaction(result, null, 'eth', account);
+                                            });
+
+                                    })
+                                    .catch(err => {
+                                        console.log(err);
+                                    });
+                            }
+                        })
+                        .catch(err => {
+                            return res.status(500).json({
+                                result: false,
+                                error: err
+                            });
                         });
-                    });
-                return;
+                    return;
+                }
+            } catch (exception) {
+                console.log(colors.bgRed.white('Critical error'));
+                console.log(exception);
             }
+
         }
     });
     console.log('eth subscribed');
@@ -180,7 +187,7 @@ async function confirmEtherTransaction(txHash, gVar, asset, account) {
                 }
             }, function (error, response, body) {
                 console.log(colors.cyan('Deposit ether confirmation notification request \t' +
-                    '{' + url + '}' + ' sent'));
+                    '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
                 if (error) {
                     console.log(colors.magenta('Deposit ether confirmation notification error \t' +
                         JSON.stringify(error)));

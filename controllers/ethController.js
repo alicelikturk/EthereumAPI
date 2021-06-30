@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const Account = require("../models/account");
 const Wallet = require("../models/wallet");
 const colors = require('colors');
+const fs = require('fs')
 
 var web3;
 const web3Model = require('../models/webThreeModel');
@@ -68,7 +69,6 @@ exports.SendTo = (req, res, next) => {
                     console.log('Tx Fee: ' + txFee + ' wei');
                     let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
                     console.log('value: ' + value + ' wei');
-                    value = value - txFee;
                     if (balance >= txFee + value) {
                         const txObject = {
                             to: toAddress,
@@ -103,11 +103,44 @@ exports.SendTo = (req, res, next) => {
 };
 
 exports.MoveTo = (req, res, next) => {
+    var data = {};
+    var total = 0;
+    readFiles('./keystore/', function (filename, content) {
+        const result = web3.eth.accounts.decrypt(content, 'TestPassword1234@');
+        web3.eth.getBalance(result.address, (error, balance) => {
+            const _balance = web3.utils.fromWei(balance, 'ether');
+            total +=Number.parseFloat(_balance);
+            if (_balance > 0)
+                console.log(result.address + ' : ' + _balance + ' eth');
+        });
+
+    }, function (err) {
+        throw err;
+    });
+    setTimeout(() => {
+        console.log('total' + ' : ' + total + ' eth');
+    }, 10000);
     res.status(200).json({
         result: "test"
     });
 };
-
+function readFiles(dirname, onFileContent, onError) {
+    fs.readdir(dirname, function (err, filenames) {
+        if (err) {
+            onError(err);
+            return;
+        }
+        filenames.forEach(function (filename) {
+            fs.readFile(dirname + filename, 'utf-8', function (err, content) {
+                if (err) {
+                    onError(err);
+                    return;
+                }
+                onFileContent(filename, content);
+            });
+        });
+    });
+}
 exports.WalletAccounts = (req, res, next) => {
     const walletId = req.params.walletId;
     let wallet = web3.eth.accounts.wallet;

@@ -2,6 +2,7 @@ const Web3 = require('web3');
 const mongoose = require("mongoose");
 const Account = require("../models/account");
 const Wallet = require("../models/wallet");
+const Contract = require("../models/contract");
 const colors = require('colors');
 
 var web3;
@@ -166,45 +167,55 @@ exports.Get = (req, res, next) => {
 };
 
 exports.GetBalance = (req, res, next) => {
+    let assetBalances = [];
     web3.eth.getBalance(req.params.address, (error, result) => {
-        const balance = web3.utils.fromWei(result, 'ether');
-        Account.findOne({ address: req.params.address })
+        console.log(result);
+        const _balance = web3.utils.fromWei(result, 'ether');
+        assetBalances.push({ name: 'eth', balance: _balance });
+        Contract.find()
             .exec()
-            .then(account => {
-                if (!account) {
+            .then(contracts => {
+                if (contracts.length < 1) {
                     res.status(200).json({
                         account: {
                             address: req.params.address,
-                            balance: balance
-                        },
-                        warning: {
-                            Message: 'Account not found'
+                            asset: assetBalances
                         },
                         request: {
                             type: 'GET',
                             url: 'http://localhost:7079/accounts/'
                         }
                     });
-                } else {
-                    res.status(200).json({
-                        account: {
-                            _Id: account._id,
-                            address: account.address,
-                            balance: balance
-                        },
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:7079/accounts/wallet/' + account.wallet._id
-                        }
-                    });
                 }
-
+                let i = 0;
+                contracts.forEach(contract => {
+                    i++;
+                    const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
+                    newContract.methods.balanceOf(req.params.address).call()
+                        .then((tokenBalance) => {
+                            const _tokenBalance = web3.utils.fromWei(tokenBalance, 'ether');
+                            assetBalances.push({ name: contract.symbol, balance: _tokenBalance });
+                            if (i === contracts.length) {
+                                res.status(200).json({
+                                    account: {
+                                        address: req.params.address,
+                                        asset: assetBalances
+                                    },
+                                    request: {
+                                        type: 'GET',
+                                        url: 'http://localhost:7079/accounts/'
+                                    }
+                                });
+                            }
+                        });
+                });
             })
             .catch(err => {
                 res.status(500).json({
                     error: err
                 });
             });
+
 
     });
 
