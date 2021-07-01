@@ -9,7 +9,7 @@ const colors = require('colors');
 const request = require("request");
 
 var web3;
-const web3Model = require('../models/webThreeModel');
+const web3Model = require('../models/web3Model');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -54,35 +54,56 @@ exports.Add = (req, res, next) => {
             message: 'name is required'
         });
     }
-    if (!req.body.abi) {
-        return res.status(404).json({
-            message: 'abi is required'
-        });
+    let _abi = require('../abiERC20.json');
+    if (req.body.abi) {
+        _abi = req.body.abi;
     }
-    const contract = new Contract({
-        _id: new mongoose.Types.ObjectId(),
-        standart: req.body.standart,
-        symbol: req.body.symbol,
-        name: req.body.name,
-        assetMoveLimit: req.body.assetMoveLimit,
-        contractAddress: req.body.contractAddress,
-        isActive: true,
-        abi: JSON.stringify(req.body.abi)
-    });
-    contract.save()
-        .then(result => {
-            console.log(result);
-            res.status(201).json({
-                message: 'Contract stored',
-                createdContract: {
-                    contract: result,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:7079/contracts/' + result._id
+    Contract.findOne({
+        $or:
+            [
+                { symbol: req.body.symbol },
+                { name: req.body.name },
+                { contractAddress: req.body.contractAddress }
+            ]
+    })
+        .exec()
+        .then(existContract => {
+            if (existContract) {
+                return res.status(409).json({
+                    message: 'Contract exist',
+                    contractInfo: {
+                        symbol: req.body.symbol,
+                        name: req.body.name,
+                        contractAddress: req.body.contractAddress,
                     }
-                }
-            });
-        })
+                });
+            } else {
+                const contract = new Contract({
+                    _id: new mongoose.Types.ObjectId(),
+                    standart: req.body.standart,
+                    symbol: req.body.symbol,
+                    name: req.body.name,
+                    assetMoveLimit: req.body.assetMoveLimit,
+                    contractAddress: req.body.contractAddress,
+                    isActive: true,
+                    abi: JSON.stringify(_abi)
+                });
+                contract.save()
+                    .then(result => {
+                        console.log(result);
+                        res.status(201).json({
+                            message: 'Contract stored',
+                            createdContract: {
+                                contract: result,
+                                request: {
+                                    type: 'GET',
+                                    url: 'http://localhost:7079/contracts/' + result._id
+                                }
+                            }
+                        });
+                    })
+            }
+        });
 };
 
 exports.Get = (req, res, next) => {
@@ -173,6 +194,119 @@ exports.Update = (req, res, next) => {
 
 };
 
+exports.GetBalance = (req, res, next) => {
+    const symbol = req.params.symbol;
+    const address = req.params.address;
+    Contract.findOne({ symbol: symbol })
+        .exec()
+        .then(contract => {
+            if (!contract) {
+                return res.status(404).json({
+                    message: "Contract not found"
+                });
+            }
+            const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
+            newContract.methods.balanceOf(address).call()
+                .then((tokenBalance) => {
+                    const _tokenBalance = web3.utils.fromWei(tokenBalance, 'ether');
+                    return res.status(200).json({
+                        account: {
+                            address: address,
+                            asset: contract.symbol,
+                            balance: _tokenBalance
+                        }
+                    });
+                });
+        });
+};
+
+// Token Transfer
+exports.SendToContract = (req, res, next) => {
+    const walletId = req.body.walletId;
+    const contractAddress = req.body.contractAddress;
+    const amount = req.body.amount;
+    const toAddress = req.body.address;
+    Contract.find({ contractAddress: contractAddress })
+        .exec()
+        .then(contract => {
+            if (!contract) {
+                return res.status(404).json({
+                    txHash: null,
+                    message: 'Contract not found'
+                });
+            }
+            Wallet.findById(walletId)
+                .then(wallet => {
+                    if (!wallet) {
+                        return res.status(404).json({
+                            txHash: null,
+                            message: "Wallet not found"
+                        });
+                    }
+                    const newContract = new web3.eth.Contract(JSON.parse(contract[0].abi), contract[0].contractAddress);
+                    newContract.methods.balanceOf(wallet.address).call()
+                        .then((tokenBalance) => {
+                            //console.log('Wallet ' + contract[0].symbol + ' balance: ' + tokenBalance + ' wei');
+                            let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
+                            //console.log('value: '+value);
+                            if (tokenBalance >= value) {
+                                web3.eth.getBalance(wallet.address, (errBalance, etherBalance) => {
+                                    //console.log('Wallet ether balance: ' +etherBalance + ' wei');
+                                    web3.eth.getGasPrice().then((gasPrice) => {
+                                        const txFee = gasPrice * 100000;
+                                        //console.log('txFee: '+txFee);
+                                        if (etherBalance >= txFee) {
+                                            //console.log('amount: '+amount);
+                                            //console.log('amount wei: '+web3.utils.toWei(amount.toString(), 'ether'));
+                                            var data = newContract.methods.transfer(toAddress, web3.utils.toWei(amount.toString(), 'ether')).encodeABI();
+                                            //console.log('data');
+                                            //console.log(data);
+                                            const txObject = {
+                                                to: contract[0].contractAddress,
+                                                data: data,
+                                                gas: 100000
+                                            };
+                                            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                                                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        return res.status(404).json({
+                                                            txHash: null,
+                                                            error: "Token SendTo sendSignedTransaction error"
+                                                        });
+                                                    }
+                                                    return res.status(200).json({
+                                                        txHash: txHash
+                                                    });
+                                                });
+                                            });
+                                        } else {
+                                            console.log("Insufficient funds for gas * price (wallet has not enough ether for transaction fee)");
+                                            return res.status(404).json({
+                                                txHash: null,
+                                                error: "Insufficient funds for gas * price (wallet has not enough ether for transaction fee)"
+                                            });
+                                        }
+                                    });
+                                });
+                            } else {
+                                console.log("Insufficient funds for value (wallet has not enough token)");
+                                return res.status(404).json({
+                                    txHash: null,
+                                    error: "Insufficient funds for value (wallet has not enough token)"
+                                });
+                            }
+                        });
+
+                });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
 exports.SubscribeToTokenTransfer = (req, res, next) => {
     Contract.find()
         .exec()
@@ -201,96 +335,94 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                 };
                 console.log(doc.symbol + ' subscribed');
                 newContract.events.Transfer(options, (error, result) => {
+                    try {
+                        //console.log(colors.green(doc.symbol + ' triggered'));
+                        if (!error) {
+                            const contractAddress = result.address;
+                            const transactionHash = result.transactionHash;
+                            const fromAddress = result.returnValues[from_param];
+                            const toAddress = result.returnValues[to_param];
+                            const value = result.returnValues[value_param];
 
-                    console.log(colors.green(doc.symbol + ' triggered'));
-                    if (error) {
-                        console.log('error');
-                        console.log(error);
-                    }
+                            Account.findOne({ address: toAddress })
+                                .populate('wallet')
+                                .exec()
+                                .then(account => {
+                                    if (!account) {
 
-                    if (!error) {
-                        const contractAddress = result.address;
-                        const transactionHash = result.transactionHash;
-                        const fromAddress = result.returnValues[from_param];
-                        const toAddress = result.returnValues[to_param];
-                        const value = result.returnValues[value_param];
+                                    } else {
+                                        const valueEther = web3.utils.fromWei(value, 'ether');
 
-                        Account.findOne({ address: toAddress })
-                            .populate('wallet')
-                            .exec()
-                            .then(account => {
-                                if (!account) {
+                                        console.log(colors.gray('Deposit: ' + doc.symbol + ' , ' + transactionHash + ' , ' + toAddress + ' , ' + valueEther + ' ' + doc.symbol));
 
-                                } else {
-                                    const valueEther = web3.utils.fromWei(value, 'ether');
-
-                                    console.log(colors.gray('Deposit: ' + doc.symbol + ' , ' + transactionHash + ' , ' + toAddress + ' , ' + valueEther + ' ' + doc.symbol));
-
-                                    const tx = new Transaction({
-                                        _id: new mongoose.Types.ObjectId(),
-                                        date: new Date().getTime(),
-                                        hash: transactionHash,
-                                        isContract: true,
-                                        contractAddress: contractAddress
-                                    });
-                                    tx.save()
-                                        .then(_result => {
-                                            // console.log(colors.bgCyan.black('Deposit Token' +
-                                            //     '\ttx saved: ' + transactionHash +
-                                            //     '\tto address: ' + toAddress +
-                                            //     '\tvalue: ' + value + ' wei'));
-                                            var postData = {
-                                                txHash: transactionHash,
-                                                to: toAddress,
-                                                value: valueEther,
-                                                from: fromAddress,
-                                                confirmation: 0,
-                                                asset: doc.symbol
-                                            }
-                                            request({
-                                                uri: account.wallet.notifyUrl,
-                                                method: "POST",
-                                                body: JSON.stringify(postData),
-                                                rejectUnauthorized: false,
-                                                headers: {
-                                                    'Content-Type': 'application/json'
+                                        const tx = new Transaction({
+                                            _id: new mongoose.Types.ObjectId(),
+                                            date: new Date().getTime(),
+                                            hash: transactionHash,
+                                            isContract: true,
+                                            contractAddress: contractAddress
+                                        });
+                                        tx.save()
+                                            .then(_result => {
+                                                // console.log(colors.bgCyan.black('Deposit Token' +
+                                                //     '\ttx saved: ' + transactionHash +
+                                                //     '\tto address: ' + toAddress +
+                                                //     '\tvalue: ' + value + ' wei'));
+                                                var postData = {
+                                                    txHash: transactionHash,
+                                                    to: toAddress,
+                                                    value: valueEther,
+                                                    from: fromAddress,
+                                                    confirmation: 0,
+                                                    asset: doc.symbol
                                                 }
-                                            }, function (error, response, body) {
-                                                console.log(colors.cyan('Deposit token notification request \t' +
-                                                    '{' + account.wallet.notifyUrl + '}' + ' sent'));
-                                                if (error) {
-                                                    console.log(colors.magenta('Deposit token notification error \t' +
-                                                        JSON.stringify(error)));
-                                                } else {
-                                                    console.log(colors.white('Deposit token notification response \t' +
-                                                        JSON.stringify(response.body)));
-                                                }
-                                            });
-
-                                            GlobalVariable.findOne()
-                                                .exec()
-                                                .then(_gVar => {
-                                                    confirmEtherTransaction(transactionHash, _gVar, postData, account, doc);
-                                                })
-                                                .catch(err => {
-                                                    confirmEtherTransaction(transactionHash, null, postData, account, doc);
+                                                request({
+                                                    uri: account.wallet.notifyUrl,
+                                                    method: "POST",
+                                                    body: JSON.stringify(postData),
+                                                    rejectUnauthorized: false,
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    }
+                                                }, function (error, response, body) {
+                                                    console.log(colors.cyan('Deposit token notification request \t' +
+                                                        '{' + account.wallet.notifyUrl + '}' + ' sent'));
+                                                    if (error) {
+                                                        console.log(colors.magenta('Deposit token notification error \t' +
+                                                            JSON.stringify(error)));
+                                                    } else {
+                                                        console.log(colors.white('Deposit token notification response \t' +
+                                                            JSON.stringify(response.body)));
+                                                    }
                                                 });
 
-                                        })
-                                        .catch(err => {
-                                            console.log(err);
-                                        });
-                                }
-                            })
-                            .catch(err => {
-                                return res.status(500).json({
-                                    result: false,
-                                    error: err
-                                });
-                            });
-                        return;
-                    }
+                                                GlobalVariable.findOne()
+                                                    .exec()
+                                                    .then(_gVar => {
+                                                        confirmEtherTransaction(transactionHash, _gVar, postData, account, doc);
+                                                    })
+                                                    .catch(err => {
+                                                        confirmEtherTransaction(transactionHash, null, postData, account, doc);
+                                                    });
 
+                                            })
+                                            .catch(err => {
+                                                console.log(err);
+                                            });
+                                    }
+                                })
+                                .catch(err => {
+                                    return res.status(500).json({
+                                        result: false,
+                                        error: err
+                                    });
+                                });
+                            return;
+                        }
+                    } catch (exception) {
+                        console.log(colors.bgRed.white('Critical error on token transfer trigger'));
+                        console.log(exception);
+                    }
                 });
             });
 
@@ -379,7 +511,7 @@ async function MoveToken(account, contract) {
     const accountAddress = account.address;
     const accountPrivateKey = account.privateKey;
     const walletAddress = account.wallet.address;
-    console.log('contract.assetMoveLimit: ' + contract.assetMoveLimit);
+    //console.log('contract.assetMoveLimit: ' + contract.assetMoveLimit);
     const assetMoveLimit = parseFloat(web3.utils.toWei(contract.assetMoveLimit.toString(), 'ether'));
 
     const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
@@ -389,7 +521,7 @@ async function MoveToken(account, contract) {
                 web3.eth.getBalance(accountAddress, (errBalance, etherBalance) => {
                     web3.eth.getGasPrice().then((gasPrice) => {
                         const txFee = gasPrice * 100000;
-                        console.log(etherBalance + ' >=' + txFee);
+                        //console.log(etherBalance + ' >=' + txFee);
                         if (etherBalance >= txFee) {
                             console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + tokenBalance + ' ' + contract.symbol));
                             SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
@@ -440,6 +572,7 @@ async function MoveToken(account, contract) {
 
 
 }
+
 async function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey) {
     var data = newContract.methods.transfer(walletAddress, tokenBalance).encodeABI();
 
@@ -461,90 +594,3 @@ async function SendToken(web3, newContract, contractAddress, symbol, walletAddre
         });
     });
 }
-
-// Token Transfer
-exports.SendToContract = (req, res, next) => {
-    const walletId = req.body.walletId;
-    const contractAddress = req.body.contractAddress;
-    const amount = req.body.amount;
-    const toAddress = req.body.address;
-    Contract.find({ contractAddress: contractAddress })
-        .exec()
-        .then(contract => {
-            if (!contract) {
-                return res.status(404).json({
-                    txHash: null,
-                    message: 'Contract not found'
-                });
-            }
-            Wallet.findById(walletId)
-                .then(wallet => {
-                    if (!wallet) {
-                        return res.status(404).json({
-                            txHash: null,
-                            message: "Wallet not found"
-                        });
-                    }
-                    const newContract = new web3.eth.Contract(JSON.parse(contract[0].abi), contract[0].contractAddress);
-                    newContract.methods.balanceOf(wallet.address).call()
-                        .then((tokenBalance) => {
-                            //console.log('Wallet ' + contract[0].symbol + ' balance: ' + tokenBalance + ' wei');
-                            let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
-                            //console.log('value: '+value);
-                            if (tokenBalance >= value) {
-                                web3.eth.getBalance(wallet.address, (errBalance, etherBalance) => {
-                                    //console.log('Wallet ether balance: ' +etherBalance + ' wei');
-                                    web3.eth.getGasPrice().then((gasPrice) => {
-                                        const txFee = gasPrice * 100000;
-                                        //console.log('txFee: '+txFee);
-                                        if (etherBalance >= txFee) {
-                                            //console.log('amount: '+amount);
-                                            //console.log('amount wei: '+web3.utils.toWei(amount.toString(), 'ether'));
-                                            var data = newContract.methods.transfer(toAddress, web3.utils.toWei(amount.toString(), 'ether')).encodeABI();
-                                            //console.log('data');
-                                            //console.log(data);
-                                            const txObject = {
-                                                to: contract[0].contractAddress,
-                                                data: data,
-                                                gas: 100000
-                                            };
-                                            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                                                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                                                    if (err) {
-                                                        console.log(err);
-                                                        return res.status(404).json({
-                                                            txHash: null,
-                                                            error: "Token SendTo sendSignedTransaction error"
-                                                        });
-                                                    }
-                                                    return res.status(200).json({
-                                                        txHash: txHash
-                                                    });
-                                                });
-                                            });
-                                        } else {
-                                            console.log("Insufficient funds for gas * price (wallet has not enough ether for transaction fee)");
-                                            return res.status(404).json({
-                                                txHash: null,
-                                                error: "Insufficient funds for gas * price (wallet has not enough ether for transaction fee)"
-                                            });
-                                        }
-                                    });
-                                });
-                            } else {
-                                console.log("Insufficient funds for value (wallet has not enough token)");
-                                return res.status(404).json({
-                                    txHash: null,
-                                    error: "Insufficient funds for value (wallet has not enough token)"
-                                });
-                            }
-                        });
-
-                });
-        })
-        .catch(err => {
-            res.status(500).json({
-                error: err
-            });
-        });
-};

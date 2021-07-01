@@ -11,6 +11,9 @@ const blockController = require('../controllers/blockController');
 //router.delete('/:blockId', blockController.Delete);
 
 router.get("/subscribe", blockController.SubscribeNewBlockHeaders);
+
 router.get("/unsubscribe", blockController.UnsubscribeNewBlockHeaders);
+
+router.get("/latest", blockController.GetLatestBlock);
 
 module.exports = router;

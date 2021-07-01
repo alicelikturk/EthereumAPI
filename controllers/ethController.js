@@ -7,7 +7,7 @@ const colors = require('colors');
 const fs = require('fs')
 
 var web3;
-const web3Model = require('../models/webThreeModel');
+const web3Model = require('../models/web3Model');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -17,11 +17,22 @@ web3Model.SetClient()
 exports.IsAddress = (req, res, next) => {
     const address = req.params.address;
     var isaddress = web3.utils.isAddress(address);
-    res.status(200).json({
+    return res.status(200).json({
         result: isaddress,
         address: address
     });
 };
+
+
+exports.GetChain = (req, res, next) => {
+    web3.eth.net.getNetworkType()
+    .then(chain=>{
+        return res.status(200).json({
+            result: chain
+        });
+    });
+};
+
 
 exports.GetTransaction = (req, res, next) => {
     const txHash = req.params.txHash;
@@ -102,6 +113,7 @@ exports.SendTo = (req, res, next) => {
         });
 };
 
+// Test Function
 exports.MoveTo = (req, res, next) => {
     var data = {};
     var total = 0;
@@ -124,6 +136,7 @@ exports.MoveTo = (req, res, next) => {
         result: "test"
     });
 };
+
 function readFiles(dirname, onFileContent, onError) {
     fs.readdir(dirname, function (err, filenames) {
         if (err) {
@@ -141,6 +154,8 @@ function readFiles(dirname, onFileContent, onError) {
         });
     });
 }
+
+// Test Function
 exports.WalletAccounts = (req, res, next) => {
     const walletId = req.params.walletId;
     let wallet = web3.eth.accounts.wallet;

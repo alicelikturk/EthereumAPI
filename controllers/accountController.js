@@ -6,7 +6,7 @@ const Contract = require("../models/contract");
 const colors = require('colors');
 
 var web3;
-const web3Model = require('../models/webThreeModel');
+const web3Model = require('../models/web3Model');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -167,56 +167,19 @@ exports.Get = (req, res, next) => {
 };
 
 exports.GetBalance = (req, res, next) => {
-    let assetBalances = [];
     web3.eth.getBalance(req.params.address, (error, result) => {
         console.log(result);
         const _balance = web3.utils.fromWei(result, 'ether');
-        assetBalances.push({ name: 'eth', balance: _balance });
-        Contract.find()
-            .exec()
-            .then(contracts => {
-                if (contracts.length < 1) {
-                    res.status(200).json({
-                        account: {
-                            address: req.params.address,
-                            asset: assetBalances
-                        },
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:7079/accounts/'
-                        }
-                    });
-                }
-                let i = 0;
-                contracts.forEach(contract => {
-                    i++;
-                    const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
-                    newContract.methods.balanceOf(req.params.address).call()
-                        .then((tokenBalance) => {
-                            const _tokenBalance = web3.utils.fromWei(tokenBalance, 'ether');
-                            assetBalances.push({ name: contract.symbol, balance: _tokenBalance });
-                            if (i === contracts.length) {
-                                res.status(200).json({
-                                    account: {
-                                        address: req.params.address,
-                                        asset: assetBalances
-                                    },
-                                    request: {
-                                        type: 'GET',
-                                        url: 'http://localhost:7079/accounts/'
-                                    }
-                                });
-                            }
-                        });
-                });
-            })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                });
-            });
-
-
+        res.status(200).json({
+            account: {
+                address: req.params.address,
+                balance: _balance
+            },
+            request: {
+                type: 'GET',
+                url: 'http://localhost:7079/accounts/'
+            }
+        });
     });
 
 };

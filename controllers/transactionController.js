@@ -10,7 +10,8 @@ const request = require("request");
 var web3;
 var subscription;
 
-const web3Model = require('../models/webThreeModel');
+const web3Model = require('../models/web3Model');
+const wallet = require('../models/wallet');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
@@ -20,8 +21,8 @@ web3Model.SetClient()
 
 exports.SubscribePendingTransactions = async (req, res, next) => {
     subscription.subscribe(async (error, result) => {
-        if (!error) {
-            try {
+        try {
+            if (!error) {
                 // Infura istek limitini dolduruyor
                 const transaction = await web3.eth.getTransaction(result);
                 if (transaction != null) {
@@ -56,63 +57,73 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                                         //     '\ttx saved: ' + transaction.hash +
                                         //     '\tto address: ' + transaction.to +
                                         //     '\tvalue: ' + transaction.value + ' wei'));
-                                        var postData = {
-                                            txHash: transaction.hash,
-                                            to: transaction.to,
-                                            value: valueEther,
-                                            from: transaction.from,
-                                            confirmation: 0,
-                                            asset: "eth"
+
+                                        // 
+                                        // It does not notify if the deposit is coming from the wallet address 
+                                        // The remaining of the ether sent for token transfer must be transferred again to the main wallet 
+                                        //
+                                        const isAvailableToNotify = account.wallet.address !== transaction.from;
+                                        if (isAvailableToNotify) {
+                                            var postData = {
+                                                txHash: transaction.hash,
+                                                to: transaction.to,
+                                                value: valueEther,
+                                                from: transaction.from,
+                                                confirmation: 0,
+                                                asset: "eth"
+                                            }
+                                            request({
+                                                uri: account.wallet.notifyUrl,
+                                                method: "POST",
+                                                body: JSON.stringify(postData),
+                                                rejectUnauthorized: false,
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                }
+                                            }, function (error, response, body) {
+                                                console.log(colors.cyan('Deposit ether notification request \t' +
+                                                    '{' + account.wallet.notifyUrl + '}' + ' sent'));
+                                                if (error) {
+                                                    console.log(colors.magenta('Deposit ether notification error \t' +
+                                                        JSON.stringify(error)));
+                                                } else {
+                                                    console.log(colors.white('Deposit ether notification response \t' +
+                                                        JSON.stringify(response.body)));
+                                                }
+                                            });
+                                        } else {
+                                            console.log(colors.bgBlue.white('Ether deposit sent from main wallet. That\'s why the notification wasn\'t sent'));
                                         }
-                                        request({
-                                            uri: account.wallet.notifyUrl,
-                                            method: "POST",
-                                            body: JSON.stringify(postData),
-                                            rejectUnauthorized: false,
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            }
-                                        }, function (error, response, body) {
-                                            console.log(colors.cyan('Deposit ether notification request \t' +
-                                                '{' + account.wallet.notifyUrl + '}' + ' sent'));
-                                            if (error) {
-                                                console.log(colors.magenta('Deposit ether notification error \t' +
-                                                    JSON.stringify(error)));
-                                            } else {
-                                                console.log(colors.white('Deposit ether notification response \t' +
-                                                    JSON.stringify(response.body)));
-                                            }
-                                        });
+
 
                                         GlobalVariable.findOne()
                                             .exec()
                                             .then(_gVar => {
-                                                confirmEtherTransaction(result, _gVar, 'eth', account);
+                                                confirmEtherTransaction(result, _gVar, 'eth', account, isAvailableToNotify);
                                             })
                                             .catch(err => {
-                                                confirmEtherTransaction(result, null, 'eth', account);
+                                                confirmEtherTransaction(result, null, 'eth', account, isAvailableToNotify);
                                             });
 
                                     })
                                     .catch(err => {
                                         console.log(err);
                                     });
+
+
                             }
                         })
                         .catch(err => {
-                            return res.status(500).json({
-                                result: false,
-                                error: err
-                            });
+                            console.log(err);
                         });
                     return;
                 }
-            } catch (exception) {
-                console.log(colors.bgRed.white('Critical error'));
-                console.log(exception);
             }
-
+        } catch (exception) {
+            console.log(colors.bgRed.white('Critical error on eth subscription'));
+            console.log(exception);
         }
+
     });
     console.log('eth subscribed');
     return res.status(200).json({
@@ -156,7 +167,7 @@ async function getConfirmations(txHash) {
     }
 }
 
-async function confirmEtherTransaction(txHash, gVar, asset, account) {
+async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
 
@@ -165,37 +176,40 @@ async function confirmEtherTransaction(txHash, gVar, asset, account) {
         //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
 
         if (txConfirmation.confirmation >= confirmationCount) {
-            const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
+            if (isAvailableToNotify==='true') {
+                const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
 
-            console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
+                console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
 
-            var postData = {
-                txHash: txConfirmation.tx.hash,
-                to: txConfirmation.tx.to,
-                value: valueEther,
-                from: txConfirmation.tx.from,
-                confirmation: txConfirmation.confirmation,
-                asset: asset
+                var postData = {
+                    txHash: txConfirmation.tx.hash,
+                    to: txConfirmation.tx.to,
+                    value: valueEther,
+                    from: txConfirmation.tx.from,
+                    confirmation: txConfirmation.confirmation,
+                    asset: asset
+                }
+                request({
+                    uri: url,
+                    method: "POST",
+                    body: JSON.stringify(postData),
+                    rejectUnauthorized: false,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }, function (error, response, body) {
+                    console.log(colors.cyan('Deposit ether confirmation notification request \t' +
+                        '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
+                    if (error) {
+                        console.log(colors.magenta('Deposit ether confirmation notification error \t' +
+                            JSON.stringify(error)));
+                    } else {
+                        console.log(colors.white('Deposit ether confirmation notification response \t' +
+                            JSON.stringify(response.body)));
+                    }
+                });
             }
-            request({
-                uri: url,
-                method: "POST",
-                body: JSON.stringify(postData),
-                rejectUnauthorized: false,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }, function (error, response, body) {
-                console.log(colors.cyan('Deposit ether confirmation notification request \t' +
-                    '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
-                if (error) {
-                    console.log(colors.magenta('Deposit ether confirmation notification error \t' +
-                        JSON.stringify(error)));
-                } else {
-                    console.log(colors.white('Deposit ether confirmation notification response \t' +
-                        JSON.stringify(response.body)));
-                }
-            });
+
             // Automatically moving eth from account to wallet address
             const autoMoving = gVar ? gVar.autoMoving : false;
             if (autoMoving)

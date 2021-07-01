@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const Block = require("../models/block");
 const colors = require('colors');
 
+var web3;
 var subscription;
-const web3Model = require('../models/webThreeModel');
+const web3Model = require('../models/web3Model');
 web3Model.SetClient()
     .then((url) => {
-        const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+        web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
         subscription = web3.eth.subscribe('newBlockHeaders');
     });
-    
 
 exports.SubscribeNewBlockHeaders = (req, res, next) => {
     subscription.subscribe((error, result) => {
@@ -38,6 +38,7 @@ exports.SubscribeNewBlockHeaders = (req, res, next) => {
         message: 'Blocks successfully subscribed'
     });
 };
+
 exports.UnsubscribeNewBlockHeaders = (req, res, next) => {
     subscription.unsubscribe(function (error, success) {
         if (success) {
@@ -47,4 +48,16 @@ exports.UnsubscribeNewBlockHeaders = (req, res, next) => {
     res.status(200).json({
         message: 'Blocks successfully unsubscribed'
     });
+};
+
+exports.GetLatestBlock = (req, res, next) => {
+    web3.eth.getBlockNumber()
+        .then(latestBlockNumber => {
+            web3.eth.getBlock(latestBlockNumber)
+                .then(block => {
+                    return res.status(200).json(block);
+                });
+        });
+
+    web3.eth.getNodeInfo().then(console.log);
 };
