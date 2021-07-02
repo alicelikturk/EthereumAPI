@@ -10,6 +10,6 @@ nodejs verson: 16.4.0
 8- npm install colors
 9- npm install --save request (to send notify )
 10- npm install fs (not necessary)
-11- npm install -g swagger
+11- npm install forever -g
 
 ------------------------------

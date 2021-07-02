@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const clientSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
     name: { type: String },
-    isActive: { type: Boolean },
+    isActive: { type: Boolean, default: false },
     mainnetHttp: { type: String },
     ropstenHttp: { type: String },
     mainnetWss: { type: String },

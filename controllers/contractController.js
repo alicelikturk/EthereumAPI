@@ -523,7 +523,8 @@ async function MoveToken(account, contract) {
                         const txFee = gasPrice * 100000;
                         //console.log(etherBalance + ' >=' + txFee);
                         if (etherBalance >= txFee) {
-                            console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + tokenBalance + ' ' + contract.symbol));
+                            const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
+                            console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + valueToken + ' ' + contract.symbol));
                             SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
                         } else {
                             // Send some ether for FEE >>>

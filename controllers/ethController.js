@@ -26,10 +26,19 @@ exports.IsAddress = (req, res, next) => {
 
 exports.GetChain = (req, res, next) => {
     web3.eth.net.getNetworkType()
-    .then(chain=>{
-        return res.status(200).json({
-            result: chain
+        .then(chain => {
+            return res.status(200).json({
+                result: chain
+            });
         });
+};
+
+exports.GetProvider = (req, res, next) => {
+    const currentProvider = web3.currentProvider;
+    res.status(200).json({
+        provider: {
+            url: currentProvider.url
+        }
     });
 };
 
@@ -121,7 +130,7 @@ exports.MoveTo = (req, res, next) => {
         const result = web3.eth.accounts.decrypt(content, 'TestPassword1234@');
         web3.eth.getBalance(result.address, (error, balance) => {
             const _balance = web3.utils.fromWei(balance, 'ether');
-            total +=Number.parseFloat(_balance);
+            total += Number.parseFloat(_balance);
             if (_balance > 0)
                 console.log(result.address + ' : ' + _balance + ' eth');
         });
@@ -156,12 +165,10 @@ function readFiles(dirname, onFileContent, onError) {
 }
 
 // Test Function
-exports.WalletAccounts = (req, res, next) => {
-    const walletId = req.params.walletId;
-    let wallet = web3.eth.accounts.wallet;
-    console.log("wallet".yellow);
-    console.log(wallet);
+exports.Test = (req, res, next) => {
+    web3.eth.isSyncing()
+    .then(console.log);
     res.status(200).json({
-        wallet: wallet
+        result: 'Test'
     });
 };

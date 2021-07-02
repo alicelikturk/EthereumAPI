@@ -28,31 +28,41 @@ exports.List = (req, res, next) => {
 };
 
 exports.Add = (req, res, next) => {
-    const client = new Client({
-        _id: new mongoose.Types.ObjectId(),
-        name: req.body.name,
-        isActive: true,
-        mainnetHttp: req.body.mainnetHttp,
-        ropstenHttp: req.body.ropstenHttp,
-        mainnetWss: req.body.mainnetWss,
-        ropstenWss: req.body.ropstenWss,
-        mainnetIpc: req.body.mainnetIpc,
-        ropstenIpc: req.body.ropstenIpc
-    });
-    client.save()
-        .then(result => {
-            console.log(result);
-            res.status(201).json({
-                message: 'Client stored',
-                createdClient: {
-                    client: result,
-                    request: {
-                        type: 'GET',
-                        url: 'http://localhost:7079/clients/' + result._id
-                    }
-                }
-            });
+    if (req.body.isActive) {
+        Client.updateMany({ isActive: true }, {
+            isActive: false
         })
+            .exec()
+            .then(result => {
+                console.log("other clients deactived");
+                const client = new Client({
+                    _id: new mongoose.Types.ObjectId(),
+                    name: req.body.name,
+                    isActive: req.body.isActive,
+                    mainnetHttp: req.body.mainnetHttp,
+                    ropstenHttp: req.body.ropstenHttp,
+                    mainnetWss: req.body.mainnetWss,
+                    ropstenWss: req.body.ropstenWss,
+                    mainnetIpc: req.body.mainnetIpc,
+                    ropstenIpc: req.body.ropstenIpc
+                });
+                client.save()
+                    .then(result => {
+                        console.log(result);
+                        res.status(201).json({
+                            message: 'Client stored. Please restart the EthereumApi server',
+                            createdClient: {
+                                client: result,
+                                request: {
+                                    type: 'GET',
+                                    url: 'http://localhost:7079/clients/' + result._id
+                                }
+                            }
+                        });
+                    })
+            });
+    }
+
 };
 
 exports.Get = (req, res, next) => {
@@ -119,31 +129,29 @@ exports.Update = (req, res, next) => {
         });
     }
     Client.updateMany({ isActive: true }, {
-            isActive: false
-        })
+        isActive: false
+    })
         .exec()
         .then(result => {
-            console.log("others deactived");
+            console.log("other clients deactived");
+            Client.updateOne({ name: updateOps["name"] }, {
+                $set: updateOps
+            })
+                .exec()
+                .then(result => {
+                    res.status(200).json({
+                        message: 'Client updated. Please restart the EthereumApi server',
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7079/clients/'
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        error: err
+                    });
+                });
         });
-
-    Client.updateOne({ name: updateOps["name"] }, {
-            $set: updateOps
-        })
-        .exec()
-        .then(result => {
-            res.status(200).json({
-                message: 'Client updated',
-                request: {
-                    type: 'GET',
-                    url: 'http://localhost:7079/clients/'
-                }
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-
 };
