@@ -417,7 +417,7 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                                         error: err
                                     });
                                 });
-                            return;
+                            //return;
                         }
                     } catch (exception) {
                         console.log(colors.bgRed.white('Critical error on token transfer trigger'));

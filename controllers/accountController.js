@@ -13,77 +13,65 @@ web3Model.SetClient()
     });
 
 exports.List = (req, res, next) => {
-    const isLocalNode = false;
-    if (isLocalNode) {
-        // **TR** Local bir düğüm de kullanılsa bile  web3.eth.getAccounts kullanılmayacak
-    } else {
-        Account.find()
-            .select('wallet address privateKey _id')
-            .populate('wallet', 'name notifyUrl network')
-            .exec()
-            .then(docs => {
-                const response = {
-                    count: docs.length,
-                    accounts: docs.map(doc => {
-                        return {
-                            _id: doc._id,
-                            address: doc.address,
-                            privateKey: doc.privateKey,
-                            wallet: doc.wallet,
-                            request: {
-                                type: 'GET',
-                                url: 'http://localhost:7079/accounts/' + doc._id
-                            }
+    Account.find()
+        .select('wallet address privateKey _id')
+        .populate('wallet', 'name notifyUrl network')
+        .exec()
+        .then(docs => {
+            const response = {
+                count: docs.length,
+                accounts: docs.map(doc => {
+                    return {
+                        _id: doc._id,
+                        address: doc.address,
+                        privateKey: doc.privateKey,
+                        wallet: doc.wallet,
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7079/accounts/' + doc._id
                         }
-                    })
-                };
-                res.status(200).json(response);
-            })
-            .catch(err => {
-                console.log(err);
-                res.status(500).json({
-                    error: err
-                });
+                    }
+                })
+            };
+            res.status(200).json(response);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
             });
-    }
-
+        });
 };
 
 exports.WalletAccountList = (req, res, next) => {
-    const isLocalNode = false;
-    if (isLocalNode) {
-        // **TR** Local bir düğüm de kullanılsa bile  web3.eth.getAccounts kullanılmayacak
-    } else {
-        Account.find({ wallet: req.params.walletId })
-            .select('wallet address privateKey _id')
-            .populate('wallet', 'name network notifyUrl')
-            .exec()
-            .then(docs => {
-                const response = {
-                    count: docs.length,
-                    wallet: docs[0].wallet,
-                    accounts: docs.map(doc => {
-                        return {
-                            _id: doc._id,
-                            address: doc.address,
-                            privateKey: doc.privateKey,
-                            request: {
-                                type: 'GET',
-                                url: 'http://localhost:7079/accounts/' + doc._id
-                            }
+    Account.find({ wallet: req.params.walletId })
+        .select('wallet address privateKey _id')
+        .populate('wallet', 'name network notifyUrl')
+        .exec()
+        .then(docs => {
+            const response = {
+                count: docs.length,
+                wallet: docs[0].wallet,
+                accounts: docs.map(doc => {
+                    return {
+                        _id: doc._id,
+                        address: doc.address,
+                        privateKey: doc.privateKey,
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7079/accounts/' + doc._id
                         }
-                    })
-                };
-                res.status(200).json(response);
-            })
-            .catch(err => {
-                console.log(err);
-                res.status(500).json({
-                    error: err
-                });
+                    }
+                })
+            };
+            res.status(200).json(response);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
             });
-    }
-
+        });
 };
 
 exports.Add = (req, res, next) => {
@@ -97,40 +85,35 @@ exports.Add = (req, res, next) => {
                 });
             }
 
-            const isLocalNode = false;
-            if (isLocalNode) {
-                // **TR** Local bir düğüm de kullanılsa bile  web3.eth.accounts.create('') kullanılacak
-            } else {
-                let _account = web3.eth.accounts.create('');
-                console.log({
-                    address: _account.address,
-                    privateKey: _account.privateKey
-                });
+            let _account = web3.eth.accounts.create('');
+            console.log({
+                address: _account.address,
+                privateKey: _account.privateKey
+            });
 
-                const account = new Account({
-                    _id: new mongoose.Types.ObjectId(),
-                    address: _account.address,
-                    privateKey: _account.privateKey,
-                    wallet: req.body.walletId
-                });
-                account.save()
-                    .then(result => {
-                        console.log(result);
-                        res.status(201).json({
-                            message: 'Account stored',
-                            createdAccount: {
-                                _id: result._id,
-                                address: result.address,
-                                privateKey: result.privateKey,
-                                wallet: result.wallet,
-                                request: {
-                                    type: 'GET',
-                                    url: 'http://localhost:7079/accounts/' + result._id
-                                }
+            const account = new Account({
+                _id: new mongoose.Types.ObjectId(),
+                address: _account.address,
+                privateKey: _account.privateKey,
+                wallet: req.body.walletId
+            });
+            account.save()
+                .then(result => {
+                    console.log(result);
+                    res.status(201).json({
+                        message: 'Account stored',
+                        createdAccount: {
+                            _id: result._id,
+                            address: result.address,
+                            privateKey: result.privateKey,
+                            wallet: result.wallet,
+                            request: {
+                                type: 'GET',
+                                url: 'http://localhost:7079/accounts/' + result._id
                             }
-                        });
-                    })
-            }
+                        }
+                    });
+                })
         })
         .catch(err => {
             console.log(err);
@@ -168,18 +151,25 @@ exports.Get = (req, res, next) => {
 
 exports.GetBalance = (req, res, next) => {
     web3.eth.getBalance(req.params.address, (error, result) => {
-        console.log(result);
-        const _balance = web3.utils.fromWei(result, 'ether');
-        res.status(200).json({
-            account: {
-                address: req.params.address,
-                balance: _balance
-            },
-            request: {
-                type: 'GET',
-                url: 'http://localhost:7079/accounts/'
-            }
-        });
+        if (!error) {
+            const _balance = web3.utils.fromWei(result, 'ether');
+            res.status(200).json({
+                account: {
+                    address: req.params.address,
+                    balance: _balance
+                },
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7079/accounts/'
+                }
+            });
+        }else{
+            res.status(404).json({
+                error: {
+                    message:'Balance: '+result
+                }
+            });
+        }
     });
 
 };

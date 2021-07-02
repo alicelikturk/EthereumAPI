@@ -15,12 +15,11 @@ const wallet = require('../models/wallet');
 web3Model.SetClient()
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
-        subscription = web3.eth.subscribe('pendingTransactions');
-
     });
 
 exports.SubscribePendingTransactions = async (req, res, next) => {
-    subscription.subscribe(async (error, result) => {
+    subscription = web3.eth.subscribe('pendingTransactions', async (error, result) => {
+        //console.log(result);
         try {
             if (!error) {
                 // Infura istek limitini dolduruyor
@@ -116,7 +115,7 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                         .catch(err => {
                             console.log(err);
                         });
-                    return;
+                    //return;
                 }
             }
         } catch (exception) {
@@ -133,7 +132,6 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
 };
 
 exports.UnsubscribePendingTransactions = (req, res, next) => {
-
     subscription.unsubscribe(function (error, success) {
         if (success) {
             console.log('Transactions successfully unsubscribed!');
@@ -176,7 +174,7 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
         //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
 
         if (txConfirmation.confirmation >= confirmationCount) {
-            if (isAvailableToNotify==='true') {
+            if (isAvailableToNotify === 'true') {
                 const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
 
                 console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
