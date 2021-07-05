@@ -38,56 +38,50 @@ exports.List = (req, res, next) => {
 };
 
 exports.Create = (req, res, next) => {
-    const isLocalNode = false;
-    if (isLocalNode) {
-        // 
-    } else {
-        Wallet.find({ name: req.body.name })
-            .exec()
-            .then(wallet => {
-                if (wallet.length >= 1) {
-                    return res.status(409).json({
-                        message: 'Wallet name exist'
-                    });
-                } else {
-                    let _wallet = web3.eth.accounts.wallet.create(1, '');
-                    console.log({
-                        address: _wallet[0].address,
-                        privateKey: _wallet[0].privateKey
-                    });
+    Wallet.find({ name: req.body.name })
+    .exec()
+    .then(wallet => {
+        if (wallet.length >= 1) {
+            return res.status(409).json({
+                message: 'Wallet name exist'
+            });
+        } else {
+            let _wallet = web3.eth.accounts.wallet.create(1, '');
+            console.log({
+                address: _wallet[0].address,
+                privateKey: _wallet[0].privateKey
+            });
 
-                    const wallet = new Wallet({
-                        _id: new mongoose.Types.ObjectId(),
-                        name: req.body.name,
-                        notifyUrl: req.body.notifyUrl,
-                        network: req.body.network,
-                        address: _wallet[0].address,
-                        privateKey: _wallet[0].privateKey
+            const wallet = new Wallet({
+                _id: new mongoose.Types.ObjectId(),
+                name: req.body.name,
+                notifyUrl: req.body.notifyUrl,
+                network: req.body.network,
+                address: _wallet[0].address,
+                privateKey: _wallet[0].privateKey
+            });
+            wallet
+                .save()
+                .then(result => {
+                    console.log(result);
+                    res.status(201).json({
+                        message: 'Wallet created',
+                        wallet: {
+                            name: wallet.name,
+                            notifyUrl: wallet.notifyUrl,
+                            address: wallet.address,
+                            network: wallet.network
+                        }
                     });
-                    wallet
-                        .save()
-                        .then(result => {
-                            console.log(result);
-                            res.status(201).json({
-                                message: 'Wallet created',
-                                wallet: {
-                                    name: wallet.name,
-                                    notifyUrl: wallet.notifyUrl,
-                                    address: wallet.address,
-                                    network: wallet.network
-                                }
-                            });
-                        })
-                        .catch(err => {
-                            console.log(err);
-                            res.status(500).json({
-                                error: err
-                            });
-                        });
-                }
-            })
-    }
-
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        error: err
+                    });
+                });
+        }
+    });
 };
 
 exports.Get = (req, res, next) => {
