@@ -8,6 +8,8 @@ router.post('/', walletController.Create);
 
 router.get('/:walletId', walletController.Get);
 
+router.get('/address/:address', walletController.GetByAddress);
+
 router.get('/balance/:walletId', walletController.GetBalance);
 
 router.delete('/:walletId', walletController.Delete);

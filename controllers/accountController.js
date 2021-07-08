@@ -75,6 +75,8 @@ exports.WalletAccountList = (req, res, next) => {
 };
 
 exports.Add = (req, res, next) => {
+    console.log('req');
+    console.log(req.body);
     const id = req.body.walletId;
     Wallet.findById(id)
         .then(wallet => {

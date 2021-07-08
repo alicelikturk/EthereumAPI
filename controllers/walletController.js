@@ -108,6 +108,30 @@ exports.Get = (req, res, next) => {
         });
 };
 
+exports.GetByAddress = (req, res, next) => {
+    Wallet.findOne({address:req.params.address})
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            res.status(200).json({
+                wallet: wallet,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7079/wallets'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
 exports.GetBalance = (req, res, next) => {
     Wallet.findById(req.params.walletId)
         .exec()

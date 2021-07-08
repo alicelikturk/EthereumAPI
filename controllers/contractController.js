@@ -382,7 +382,8 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                                                     body: JSON.stringify(postData),
                                                     rejectUnauthorized: false,
                                                     headers: {
-                                                        'Content-Type': 'application/json'
+                                                        'Content-Type': 'application/json',
+                                                        'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
                                                     }
                                                 }, function (error, response, body) {
                                                     console.log(colors.cyan('Deposit token notification request \t' +
@@ -483,7 +484,8 @@ async function confirmEtherTransaction(txHash, gVar, postedData, account, contra
                 body: JSON.stringify(postedData),
                 rejectUnauthorized: false,
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
                 }
             }, function (error, response, body) {
                 console.log(colors.cyan('Deposit token confirmation notification request \t' +

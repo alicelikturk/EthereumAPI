@@ -77,7 +77,8 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                                                 body: JSON.stringify(postData),
                                                 rejectUnauthorized: false,
                                                 headers: {
-                                                    'Content-Type': 'application/json'
+                                                    'Content-Type': 'application/json',
+                                                    'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
                                                 }
                                             }, function (error, response, body) {
                                                 console.log(colors.cyan('Deposit ether notification request \t' +
@@ -193,7 +194,8 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
                     body: JSON.stringify(postData),
                     rejectUnauthorized: false,
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
                     }
                 }, function (error, response, body) {
                     console.log(colors.cyan('Deposit ether confirmation notification request \t' +
