@@ -353,7 +353,7 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                                     } else {
                                         const valueEther = web3.utils.fromWei(value, 'ether');
 
-                                        console.log(colors.gray('Deposit: ' + doc.symbol + ' , ' + transactionHash + ' , ' + toAddress + ' , ' + valueEther + ' ' + doc.symbol));
+                                        console.log(colors.green('Deposit: ' + doc.symbol + ' , ' + transactionHash + ' , ' + toAddress + ' , ' + valueEther + ' ' + doc.symbol));
 
                                         const tx = new Transaction({
                                             _id: new mongoose.Types.ObjectId(),
@@ -383,7 +383,7 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                                                     rejectUnauthorized: false,
                                                     headers: {
                                                         'Content-Type': 'application/json',
-                                                        'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
+                                                        'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                                                     }
                                                 }, function (error, response, body) {
                                                     console.log(colors.cyan('Deposit token notification request \t' +
@@ -422,7 +422,7 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                         }
                     } catch (exception) {
                         console.log(colors.bgRed.white('Critical error on token transfer trigger'));
-                        console.log(exception);
+                        //console.log(exception);
                     }
                 });
             });
@@ -468,13 +468,13 @@ async function getConfirmations(txHash) {
 async function confirmEtherTransaction(txHash, gVar, postedData, account, contract) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
-
+    var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
         //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
 
         if (txConfirmation.confirmation >= confirmationCount) {
-            console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + postedData.asset + ' , ' + txHash + ' , ' + postedData.to + ' , ' + postedData.value + ' ' + postedData.asset));
+            console.log(colors.green('Confirmed (' + txConfirmation.confirmation + '): ' + postedData.asset + ' , ' + txHash + ' , ' + postedData.to + ' , ' + postedData.value + ' ' + postedData.asset));
 
             postedData.confirmation = txConfirmation.confirmation;
 
@@ -485,7 +485,7 @@ async function confirmEtherTransaction(txHash, gVar, postedData, account, contra
                 rejectUnauthorized: false,
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
+                    'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                 }
             }, function (error, response, body) {
                 console.log(colors.cyan('Deposit token confirmation notification request \t' +
@@ -505,7 +505,38 @@ async function confirmEtherTransaction(txHash, gVar, postedData, account, contra
 
             clearInterval(intervalId);
 
+        } else {
+            if (lastConfirmationCount != txConfirmation.confirmation) {
+                console.log(colors.green('Confirming (' + txConfirmation.confirmation + '): ' + postedData.asset + ' , ' + txHash + ' , ' + postedData.to + ' , ' + postedData.value + ' ' + postedData.asset));
+
+                postedData.confirmation = txConfirmation.confirmation;
+
+                request({
+                    uri: url,
+                    method: "POST",
+                    body: JSON.stringify(postedData),
+                    rejectUnauthorized: false,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
+                    }
+                }, function (error, response, body) {
+                    console.log(colors.cyan('Deposit token confirmation notification request \t' +
+                        '{' + url + ', ' + postedData.value + ' ' + postedData.asset + ', ' + txHash + '}' + ' sent'));
+                    if (error) {
+                        console.log(colors.magenta('Deposit token confirmation notification error \t' +
+                            JSON.stringify(error)));
+                    } else {
+                        console.log(colors.white('Deposit token confirmation notification response \t' +
+                            JSON.stringify(response.body)));
+                    }
+                });
+
+            } else {
+
+            }
         }
+        lastConfirmationCount = txConfirmation.confirmation;
     }, 5 * 1000)
 }
 
@@ -546,10 +577,18 @@ async function MoveToken(account, contract) {
                                                     gas: 21000
                                                 };
                                                 web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                                                    web3.eth.sendSignedTransaction(result.rawTransaction)
-                                                        .on('transactionHash', function (hash) {
+                                                    web3.eth.sendSignedTransaction(result.rawTransaction,(err, hash)=>{
+                                                        console.log(colors.red('MOVE TOKEN'));
+                                                        if (err) {
+                                                            console.log(colors.red('error: Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
+                                                            //console.log(err);
+                                                        } else {
                                                             console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
-                                                        })
+                                                        }
+                                                    })
+                                                        // .on('transactionHash', function (hash) {
+                                                        //     console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
+                                                        // })
                                                         .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
                                                             // console.log('confirmation :' + (confNumber === 1));
                                                             // console.log(confNumber);

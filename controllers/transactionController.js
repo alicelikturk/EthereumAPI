@@ -42,7 +42,7 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                             } else {
                                 const valueEther = web3.utils.fromWei(transaction.value, 'ether');
 
-                                console.log(colors.gray('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
+                                console.log(colors.green('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
 
                                 const tx = new Transaction({
                                     _id: new mongoose.Types.ObjectId(),
@@ -78,7 +78,7 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                                                 rejectUnauthorized: false,
                                                 headers: {
                                                     'Content-Type': 'application/json',
-                                                    'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
+                                                    'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                                                 }
                                             }, function (error, response, body) {
                                                 console.log(colors.cyan('Deposit ether notification request \t' +
@@ -121,7 +121,7 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
             }
         } catch (exception) {
             console.log(colors.bgRed.white('Critical error on eth subscription'));
-            console.log(exception);
+            //console.log(exception);
         }
 
     });
@@ -169,16 +169,16 @@ async function getConfirmations(txHash) {
 async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
-
+    var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
         //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
 
         if (txConfirmation.confirmation >= confirmationCount) {
-            if (isAvailableToNotify === 'true') {
+            if (isAvailableToNotify === true) {
                 const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
 
-                console.log(colors.gray('Confirmation (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
+                console.log(colors.green('Confirmed (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
 
                 var postData = {
                     txHash: txConfirmation.tx.hash,
@@ -195,7 +195,7 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
                     rejectUnauthorized: false,
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-api-key':'aB8ccABtup85AoKtl96aY904IU889paso'
+                        'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                     }
                 }, function (error, response, body) {
                     console.log(colors.cyan('Deposit ether confirmation notification request \t' +
@@ -217,7 +217,47 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
 
             clearInterval(intervalId);
 
+        } else {
+            if (lastConfirmationCount != txConfirmation.confirmation) {
+                if (isAvailableToNotify === true) {
+                    const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
+    
+                    console.log(colors.green('Confirming (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
+    
+                    var postData = {
+                        txHash: txConfirmation.tx.hash,
+                        to: txConfirmation.tx.to,
+                        value: valueEther,
+                        from: txConfirmation.tx.from,
+                        confirmation: txConfirmation.confirmation,
+                        asset: asset
+                    }
+                    request({
+                        uri: url,
+                        method: "POST",
+                        body: JSON.stringify(postData),
+                        rejectUnauthorized: false,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
+                        }
+                    }, function (error, response, body) {
+                        console.log(colors.cyan('Deposit ether confirmation notification request \t' +
+                            '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
+                        if (error) {
+                            console.log(colors.magenta('Deposit ether confirmation notification error \t' +
+                                JSON.stringify(error)));
+                        } else {
+                            console.log(colors.white('Deposit ether confirmation notification response \t' +
+                                JSON.stringify(response.body)));
+                        }
+                    });
+                }
+            } else {
+
+            }
         }
+        lastConfirmationCount = txConfirmation.confirmation;
     }, 5 * 1000)
 }
 
@@ -240,7 +280,7 @@ async function MoveEth(account) {
                     web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
                         if (err) {
                             console.log(colors.red('error: MoveEth sendSignedTransaction error'));
-                            console.log(err);
+                            //console.log(err);
                         }
                         else {
                             const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');

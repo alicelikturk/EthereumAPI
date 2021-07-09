@@ -75,8 +75,6 @@ exports.WalletAccountList = (req, res, next) => {
 };
 
 exports.Add = (req, res, next) => {
-    console.log('req');
-    console.log(req.body);
     const id = req.body.walletId;
     Wallet.findById(id)
         .then(wallet => {
@@ -88,11 +86,6 @@ exports.Add = (req, res, next) => {
             }
 
             let _account = web3.eth.accounts.create('');
-            console.log({
-                address: _account.address,
-                privateKey: _account.privateKey
-            });
-
             const account = new Account({
                 _id: new mongoose.Types.ObjectId(),
                 address: _account.address,
@@ -101,7 +94,6 @@ exports.Add = (req, res, next) => {
             });
             account.save()
                 .then(result => {
-                    console.log(result);
                     res.status(201).json({
                         message: 'Account stored',
                         createdAccount: {
@@ -165,10 +157,10 @@ exports.GetBalance = (req, res, next) => {
                     url: 'http://localhost:7079/accounts/'
                 }
             });
-        }else{
+        } else {
             res.status(404).json({
                 error: {
-                    message:'Balance: '+result
+                    message: 'Balance: ' + result
                 }
             });
         }
