@@ -70,6 +70,7 @@ exports.GetTransaction = (req, res, next) => {
 };
 
 exports.SendTo = (req, res, next) => {
+    console.log(req.body);
     const walletId = req.body.walletId;
     const amount = req.body.amount;
     const toAddress = req.body.address;
@@ -81,8 +82,14 @@ exports.SendTo = (req, res, next) => {
                     message: "Wallet not found"
                 });
             }
+            console.log(colors.bgWhite.black('WEB3'));
+            console.log(web3);
+            console.log('wallet.address: ' + wallet.address);
             web3.eth.getBalance(wallet.address, (errBalance, balance) => {
-                console.log('Wallet Balance: ' + balance + ' wei');
+                if (errBalance)
+                    console.log('errBalance: ' + errBalance);
+                else
+                    console.log('Wallet Balance: ' + balance + ' wei');
                 web3.eth.getGasPrice().then((gasPrice) => {
                     console.log('Gas Price: ' + gasPrice + ' wei');
                     const txFee = gasPrice * 21000;
@@ -90,23 +97,26 @@ exports.SendTo = (req, res, next) => {
                     let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
                     console.log('value: ' + value + ' wei');
                     if (balance >= txFee + value) {
-                        const txObject = {
-                            to: toAddress,
-                            value: value, // in wei
-                            //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                            gas: 21000
-                        };
-                        web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                            web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                                if (err) {
-                                    console.log(err);
-                                    return res.status(404).json({
-                                        txHash: null,
-                                        error: "SendTo sendSignedTransaction error"
+                        web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                            const txObject = {
+                                nonce:txCount,
+                                to: toAddress,
+                                value: value, // in wei
+                                //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                                gas: 21000
+                            };
+                            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                    if (err) {
+                                        console.log(err);
+                                        return res.status(404).json({
+                                            txHash: null,
+                                            error: "SendTo sendSignedTransaction error"
+                                        });
+                                    }
+                                    return res.status(200).json({
+                                        txHash: txHash
                                     });
-                                }
-                                return res.status(200).json({
-                                    txHash: txHash
                                 });
                             });
                         });
@@ -167,7 +177,7 @@ function readFiles(dirname, onFileContent, onError) {
 // Test Function
 exports.Test = (req, res, next) => {
     web3.eth.isSyncing()
-    .then(console.log);
+        .then(console.log);
     res.status(200).json({
         result: 'Test'
     });

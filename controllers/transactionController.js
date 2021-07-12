@@ -12,12 +12,13 @@ var subscription;
 
 const web3Model = require('../models/web3Model');
 const wallet = require('../models/wallet');
-web3Model.SetClient()
+web3Model.SetClient(true)
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+        SubscribePendingTransactions();
     });
 
-exports.SubscribePendingTransactions = async (req, res, next) => {
+async function SubscribePendingTransactions() {
     subscription = web3.eth.subscribe('pendingTransactions', async (error, result) => {
         //console.log(result);
         try {
@@ -120,18 +121,22 @@ exports.SubscribePendingTransactions = async (req, res, next) => {
                 }
             }
         } catch (exception) {
-            console.log(colors.bgRed.white('Critical error on eth subscription'));
+            //console.log(colors.bgRed.white('Critical error on eth subscription'));
             //console.log(exception);
         }
 
     });
+    console.log('eth subscribed');
+};
+
+exports.SubscribePendingTransactions = (req, res, next) => {
+    SubscribePendingTransactions();
     console.log('eth subscribed');
     return res.status(200).json({
         result: true,
         message: 'Transactions successfully subscribed'
     });
 };
-
 exports.UnsubscribePendingTransactions = (req, res, next) => {
     subscription.unsubscribe(function (error, success) {
         if (success) {
@@ -221,9 +226,9 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
             if (lastConfirmationCount != txConfirmation.confirmation) {
                 if (isAvailableToNotify === true) {
                     const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
-    
+
                     console.log(colors.green('Confirming (' + txConfirmation.confirmation + '): ' + asset + ' , ' + txConfirmation.tx.hash + ' , ' + txConfirmation.tx.to + ' , ' + valueEther + ' Ether'));
-    
+
                     var postData = {
                         txHash: txConfirmation.tx.hash,
                         to: txConfirmation.tx.to,
@@ -270,23 +275,36 @@ async function MoveEth(account) {
             const txFee = gasPrice * 21000;
             if (balance > txFee) {
                 const transferValue = balance - txFee;
-                const txObject = {
-                    to: walletAddress,
-                    value: transferValue, // in wei
-                    //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                    gas: 21000
-                };
-                web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
-                    web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                        if (err) {
-                            console.log(colors.red('error: MoveEth sendSignedTransaction error'));
-                            //console.log(err);
-                        }
-                        else {
-                            const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
-                            console.log(colors.blue('Ether moved to: ' + walletAddress + ' , ' + valueEther + ' Ether' + ' , ' + txHash));
-                        }
-                    });
+                web3.eth.getTransactionCount(accountAddress, (errtxCount, txCount) => {
+                    const txObject = {
+                        nonce: txCount,
+                        to: walletAddress,
+                        value: transferValue, // in wei
+                        //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                        gas: 21000
+                    };
+                    try {
+                        web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
+                            if (error) {
+                                console.log(colors.yellow('error: MoveEth signTransaction error'));
+                                //console.log(err);
+                            }
+                            web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                if (err) {
+                                    console.log(colors.red('error: MoveEth sendSignedTransaction error'));
+                                    //console.log(err);
+                                }
+                                else {
+                                    const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
+                                    console.log(colors.blue('Ether moved to: ' + walletAddress + ' , ' + valueEther + ' Ether' + ' , ' + txHash));
+                                }
+                            });
+                        });
+                    } catch (errorTry) {
+                        console.log(colors.bgRed.white('MoveEth exception'));
+                        console.log(errorTry);
+                    }
+
                 });
             }
         });

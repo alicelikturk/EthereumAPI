@@ -59,7 +59,7 @@ const clientRoutes = require('./routes/clients');
 const accountRoutes = require('./routes/accounts');
 const walletRoutes = require('./routes/wallets');
 const globalVariableRoutes = require('./routes/globalVariables');
-const ethRoutes = require('./routes/eth');
+const chainRoutes = require('./routes/chain');
 const contractRoutes = require('./routes/contracts');
 const notifyRoutes = require('./routes/notifies');
 
@@ -69,7 +69,7 @@ app.use('/clients', clientRoutes);
 app.use('/accounts', accountRoutes);
 app.use('/wallets', walletRoutes);
 app.use('/globalVariables', globalVariableRoutes);
-app.use('/eth', ethRoutes);
+app.use('/chain', chainRoutes);
 app.use('/contracts', contractRoutes);
 app.use('/notify', notifyRoutes);
 

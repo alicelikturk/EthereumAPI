@@ -10,9 +10,10 @@ const request = require("request");
 
 var web3;
 const web3Model = require('../models/web3Model');
-web3Model.SetClient()
+web3Model.SetClient(true)
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+        SubscribeToTokenTransfer();
     });
 
 
@@ -261,22 +262,25 @@ exports.SendToContract = (req, res, next) => {
                                             var data = newContract.methods.transfer(toAddress, web3.utils.toWei(amount.toString(), 'ether')).encodeABI();
                                             //console.log('data');
                                             //console.log(data);
-                                            const txObject = {
-                                                to: contract[0].contractAddress,
-                                                data: data,
-                                                gas: 100000
-                                            };
-                                            web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                                                web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-                                                    if (err) {
-                                                        console.log(err);
-                                                        return res.status(404).json({
-                                                            txHash: null,
-                                                            error: "Token SendTo sendSignedTransaction error"
+                                            web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                                                const txObject = {
+                                                    nonce: txCount,
+                                                    to: contract[0].contractAddress,
+                                                    data: data,
+                                                    gas: 100000
+                                                };
+                                                web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                                                    web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                                        if (err) {
+                                                            console.log(err);
+                                                            return res.status(404).json({
+                                                                txHash: null,
+                                                                error: "Token SendTo sendSignedTransaction error"
+                                                            });
+                                                        }
+                                                        return res.status(200).json({
+                                                            txHash: txHash
                                                         });
-                                                    }
-                                                    return res.status(200).json({
-                                                        txHash: txHash
                                                     });
                                                 });
                                             });
@@ -307,15 +311,16 @@ exports.SendToContract = (req, res, next) => {
         });
 };
 
-exports.SubscribeToTokenTransfer = (req, res, next) => {
+async function SubscribeToTokenTransfer() {
     Contract.find()
         .exec()
         .then(docs => {
             if (docs.length < 1) {
-                return res.status(200).json({
-                    result: false,
-                    message: 'Token Contract not found'
-                });
+                // return res.status(200).json({
+                //     result: false,
+                //     message: 'Token Contract not found'
+                // });
+                console.log(colors.red('Token Contract not found'));
             }
             docs.forEach(doc => {
                 const newContract = new web3.eth.Contract(JSON.parse(doc.abi), doc.contractAddress);
@@ -333,10 +338,10 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                     },
                     fromBlock: 'latest' //'pending' 
                 };
-                console.log(doc.symbol + ' subscribed');
+                console.log(doc.symbol + ' token subscribed');
                 newContract.events.Transfer(options, (error, result) => {
                     try {
-                        //console.log(colors.green(doc.symbol + ' triggered'));
+                        console.log(colors.green(doc.symbol + ' triggered'));
                         if (!error) {
                             const contractAddress = result.address;
                             const transactionHash = result.transactionHash;
@@ -413,10 +418,11 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                                     }
                                 })
                                 .catch(err => {
-                                    return res.status(500).json({
-                                        result: false,
-                                        error: err
-                                    });
+                                    // return res.status(500).json({
+                                    //     result: false,
+                                    //     error: err
+                                    // });
+                                    console.log(err);
                                 });
                             //return;
                         }
@@ -427,19 +433,26 @@ exports.SubscribeToTokenTransfer = (req, res, next) => {
                 });
             });
 
-            return res.status(200).json({
-                result: true,
-                message: 'Contract Transfer successfully subscribed'
-            });
+            // return res.status(200).json({
+            //     result: true,
+            //     message: 'Contract Transfer successfully subscribed'
+            // });
         })
         .catch(err => {
             console.log(err);
-            return res.status(500).json({
-                result: false,
-                error: err
-            });
+            // return res.status(500).json({
+            //     result: false,
+            //     error: err
+            // });
         });
 
+}
+exports.SubscribeToTokenTransfer = (req, res, next) => {
+    SubscribeToTokenTransfer();
+    return res.status(200).json({
+        result: true,
+        message: 'Contract Transfer successfully subscribed'
+    });
 };
 
 async function getConfirmations(txHash) {
@@ -571,34 +584,37 @@ async function MoveToken(account, contract) {
                                     web3.eth.getBalance(wallet.address, (errBalance, walletEtherBalance) => {
                                         web3.eth.getGasPrice().then((gasPrice) => {
                                             if (walletEtherBalance >= txFee) {
-                                                const txObject = {
-                                                    to: accountAddress,
-                                                    value: txFee,
-                                                    gas: 21000
-                                                };
-                                                web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
-                                                    web3.eth.sendSignedTransaction(result.rawTransaction,(err, hash)=>{
-                                                        console.log(colors.red('MOVE TOKEN'));
-                                                        if (err) {
-                                                            console.log(colors.red('error: Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
-                                                            //console.log(err);
-                                                        } else {
-                                                            console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
-                                                        }
-                                                    })
-                                                        // .on('transactionHash', function (hash) {
-                                                        //     console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
-                                                        // })
-                                                        .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
-                                                            // console.log('confirmation :' + (confNumber === 1));
-                                                            // console.log(confNumber);
-                                                            // console.log(receipt);
-                                                            // console.log(latestBlockHash);
-                                                            if (confNumber === 1) {
-                                                                // ether is ready. move the token
-                                                                await SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
+                                                web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                                                    const txObject = {
+                                                        nonce: txCount,
+                                                        to: accountAddress,
+                                                        value: txFee,
+                                                        gas: 21000
+                                                    };
+                                                    web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
+                                                        web3.eth.sendSignedTransaction(result.rawTransaction, (err, hash) => {
+                                                            console.log(colors.red('MOVE TOKEN'));
+                                                            if (err) {
+                                                                console.log(colors.red('error: Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
+                                                                //console.log(err);
+                                                            } else {
+                                                                console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
                                                             }
-                                                        });
+                                                        })
+                                                            // .on('transactionHash', function (hash) {
+                                                            //     console.log(colors.blue('Ether moved to account to transfer token: ' + accountAddress + ' , ' + txFee + ' eth' + ' , ' + hash));
+                                                            // })
+                                                            .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
+                                                                // console.log('confirmation :' + (confNumber === 1));
+                                                                // console.log(confNumber);
+                                                                // console.log(receipt);
+                                                                // console.log(latestBlockHash);
+                                                                if (confNumber === 1) {
+                                                                    // ether is ready. move the token
+                                                                    await SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
+                                                                }
+                                                            });
+                                                    });
                                                 });
                                             } else {
                                                 console.log(colors.red('error: Insufficient funds for gas * price + value. on {gas fee transfer to move the deposited token to the main wallet}'));
@@ -617,22 +633,24 @@ async function MoveToken(account, contract) {
 
 async function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey) {
     var data = newContract.methods.transfer(walletAddress, tokenBalance).encodeABI();
-
-    const txObject = {
-        to: contractAddress,
-        data: data,
-        gas: 100000
-    };
-    web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
-        web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
-            console.log(colors.red('MOVE TOKEN'));
-            if (err) {
-                console.log(colors.red('error: MoveToken sendSignedTransaction error'));
-                console.log(err);
-            } else {
-                const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
-                console.log(colors.blue('Token moved to: ' + walletAddress + ' , ' + valueToken + ' ' + symbol + ' , ' + txHash));
-            }
+    web3.eth.getTransactionCount(walletAddress, (errtxCount, txCount) => {
+        const txObject = {
+            nonce: txCount,
+            to: contractAddress,
+            data: data,
+            gas: 100000
+        };
+        web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
+            web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                console.log(colors.red('MOVE TOKEN'));
+                if (err) {
+                    console.log(colors.red('error: MoveToken sendSignedTransaction error'));
+                    console.log(err);
+                } else {
+                    const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
+                    console.log(colors.blue('Token moved to: ' + walletAddress + ' , ' + valueToken + ' ' + symbol + ' , ' + txHash));
+                }
+            });
         });
     });
 }
