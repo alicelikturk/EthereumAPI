@@ -5,7 +5,7 @@ const Contract = require("../models/contract");
 
 var web3;
 const web3Model = require('../models/web3Model');
-web3Model.SetClient()
+web3Model.SetClient(true)
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
     });
@@ -142,7 +142,9 @@ exports.GetBalance = (req, res, next) => {
                 });
             }
             let assetBalances = [];
+            console.log(wallet);
             web3.eth.getBalance(wallet.address, (error, result) => {
+                console.log(error);
                 const balance = web3.utils.fromWei(result, 'ether');
                 assetBalances.push({ name: 'eth', balance: balance });
                 Contract.find()
@@ -150,18 +152,12 @@ exports.GetBalance = (req, res, next) => {
                     .then(contracts => {
                         if (contracts.length < 1) {
                             res.status(200).json({
-                                wallet: {
-                                    _Id: wallet._id,
-                                    name: wallet.name,
-                                    notifyUrl: wallet.notifyUrl,
-                                    network: wallet.network,
-                                    address: wallet.address,
-                                    asset: assetBalances
-                                },
-                                request: {
-                                    type: 'GET',
-                                    url: 'http://localhost:7079/wallets/'
-                                }
+                                _Id: wallet._id,
+                                name: wallet.name,
+                                notifyUrl: wallet.notifyUrl,
+                                network: wallet.network,
+                                address: wallet.address,
+                                asset: assetBalances
                             });
                         }
                         let i = 0;
@@ -174,18 +170,12 @@ exports.GetBalance = (req, res, next) => {
                                     assetBalances.push({ name: contract.symbol, balance: _tokenBalance });
                                     if (i === contracts.length) {
                                         res.status(200).json({
-                                            wallet: {
-                                                _Id: wallet._id,
-                                                name: wallet.name,
-                                                notifyUrl: wallet.notifyUrl,
-                                                network: wallet.network,
-                                                address: wallet.address,
-                                                asset: assetBalances
-                                            },
-                                            request: {
-                                                type: 'GET',
-                                                url: 'http://localhost:7079/wallets/'
-                                            }
+                                            _Id: wallet._id,
+                                            name: wallet.name,
+                                            notifyUrl: wallet.notifyUrl,
+                                            network: wallet.network,
+                                            address: wallet.address,
+                                            asset: assetBalances
                                         });
                                     }
                                 });
