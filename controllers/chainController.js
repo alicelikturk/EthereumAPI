@@ -115,7 +115,8 @@ exports.SendTo = (req, res, next) => {
                                         });
                                     }
                                     return res.status(200).json({
-                                        txHash: txHash
+                                        txHash: txHash,
+                                        fee:txFee
                                     });
                                 });
                             });
