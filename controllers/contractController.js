@@ -341,7 +341,7 @@ async function SubscribeToTokenTransfer() {
                 console.log(doc.symbol + ' token subscribed');
                 newContract.events.Transfer(options, (error, result) => {
                     try {
-                        console.log(colors.green(doc.symbol + ' triggered'));
+                        console.log(doc.symbol + ' triggered');
                         if (!error) {
                             const contractAddress = result.address;
                             const transactionHash = result.transactionHash;
@@ -405,10 +405,10 @@ async function SubscribeToTokenTransfer() {
                                                 GlobalVariable.findOne()
                                                     .exec()
                                                     .then(_gVar => {
-                                                        confirmEtherTransaction(transactionHash, _gVar, postData, account, doc);
+                                                        confirmTokenTransaction(transactionHash, _gVar, postData, account, doc);
                                                     })
                                                     .catch(err => {
-                                                        confirmEtherTransaction(transactionHash, null, postData, account, doc);
+                                                        confirmTokenTransaction(transactionHash, null, postData, account, doc);
                                                     });
 
                                             })
@@ -478,7 +478,7 @@ async function getConfirmations(txHash) {
     }
 }
 
-async function confirmEtherTransaction(txHash, gVar, postedData, account, contract) {
+async function confirmTokenTransaction(txHash, gVar, postedData, account, contract) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
@@ -582,15 +582,15 @@ async function MoveToken(account, contract) {
                                         console.log(colors.red('error: Wallet not found. on {gas fee transfer to move the deposited token to the main wallet}'));
                                     }
                                     web3.eth.getBalance(wallet.address, (errBalance, walletEtherBalance) => {
-                                        web3.eth.getGasPrice().then((gasPrice) => {
-                                            if (walletEtherBalance >= txFee) {
-                                                web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
-                                                    const txObject = {
-                                                        nonce: txCount,
-                                                        to: accountAddress,
-                                                        value: txFee,
-                                                        gas: 21000
-                                                    };
+                                        if (walletEtherBalance >= txFee) {
+                                            web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                                                const txObject = {
+                                                    nonce: txCount,
+                                                    to: accountAddress,
+                                                    value: txFee,
+                                                    gas: 21000
+                                                };
+                                                try {
                                                     web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
                                                         web3.eth.sendSignedTransaction(result.rawTransaction, (err, hash) => {
                                                             console.log(colors.red('MOVE TOKEN'));
@@ -606,7 +606,8 @@ async function MoveToken(account, contract) {
                                                             // })
                                                             .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
                                                                 // console.log('confirmation :' + (confNumber === 1));
-                                                                // console.log(confNumber);
+                                                                //console.log("MOVE TOKEN confirmation");
+                                                                //console.log(confNumber);
                                                                 // console.log(receipt);
                                                                 // console.log(latestBlockHash);
                                                                 if (confNumber === 1) {
@@ -615,11 +616,14 @@ async function MoveToken(account, contract) {
                                                                 }
                                                             });
                                                     });
-                                                });
-                                            } else {
-                                                console.log(colors.red('error: Insufficient funds for gas * price + value. on {gas fee transfer to move the deposited token to the main wallet}'));
-                                            }
-                                        });
+                                                } catch (moveTokenSignTransactionError) {
+                                                    console.log(colors.red('moveTokenSignTransactionError'));
+                                                    console.log(moveTokenSignTransactionError);
+                                                }
+                                            });
+                                        } else {
+                                            console.log(colors.red('error: Insufficient funds for gas * price + value. on {gas fee transfer to move the deposited token to the main wallet}'));
+                                        }
                                     });
                                 });
                         }

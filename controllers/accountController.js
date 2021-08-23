@@ -7,7 +7,7 @@ const colors = require('colors');
 
 var web3;
 const web3Model = require('../models/web3Model');
-web3Model.SetClient()
+web3Model.SetClient(true)
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
     });

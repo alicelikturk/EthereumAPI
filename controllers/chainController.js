@@ -8,7 +8,7 @@ const fs = require('fs')
 
 var web3;
 const web3Model = require('../models/web3Model');
-web3Model.SetClient()
+web3Model.SetClient(true)
     .then((url) => {
         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
     });
@@ -82,9 +82,6 @@ exports.SendTo = (req, res, next) => {
                     message: "Wallet not found"
                 });
             }
-            console.log(colors.bgWhite.black('WEB3'));
-            console.log(web3);
-            console.log('wallet.address: ' + wallet.address);
             web3.eth.getBalance(wallet.address, (errBalance, balance) => {
                 if (errBalance)
                     console.log('errBalance: ' + errBalance);
