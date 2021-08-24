@@ -356,6 +356,7 @@ async function SubscribeToTokenTransfer() {
                                     if (!account) {
 
                                     } else {
+                                        //console.log(account);
                                         const valueEther = web3.utils.fromWei(value, 'ether');
 
                                         console.log(colors.green('Deposit: ' + doc.symbol + ' , ' + transactionHash + ' , ' + toAddress + ' , ' + valueEther + ' ' + doc.symbol));
@@ -566,12 +567,19 @@ async function MoveToken(account, contract) {
             if (tokenBalance >= assetMoveLimit) {
                 web3.eth.getBalance(accountAddress, (errBalance, etherBalance) => {
                     web3.eth.getGasPrice().then((gasPrice) => {
-                        const txFee = gasPrice * 100000;
+                        const txFee = gasPrice * 150000;
                         //console.log(etherBalance + ' >=' + txFee);
                         if (etherBalance >= txFee) {
                             const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
                             console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + valueToken + ' ' + contract.symbol));
-                            SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
+                            SendToken(web3, 
+                                newContract, 
+                                contract.contractAddress, 
+                                contract.symbol, 
+                                walletAddress, 
+                                tokenBalance, 
+                                accountPrivateKey,
+                                accountAddress);
                         } else {
                             // Send some ether for FEE >>>
                             // gas fee transfer to move the deposited token to the main wallet
@@ -612,7 +620,14 @@ async function MoveToken(account, contract) {
                                                                 // console.log(latestBlockHash);
                                                                 if (confNumber === 1) {
                                                                     // ether is ready. move the token
-                                                                    await SendToken(web3, newContract, contract.contractAddress, contract.symbol, walletAddress, tokenBalance, accountPrivateKey);
+                                                                    await SendToken(web3,
+                                                                        newContract,
+                                                                        contract.contractAddress,
+                                                                        contract.symbol,
+                                                                        walletAddress,
+                                                                        tokenBalance,
+                                                                        accountPrivateKey,
+                                                                        accountAddress);
                                                                 }
                                                             });
                                                     });
@@ -635,9 +650,13 @@ async function MoveToken(account, contract) {
 
 }
 
-async function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey) {
+async function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey,accountAddress) {
+    // console.log("accountAddress  : " + accountAddress);
+    // console.log("walletAddress  : " + walletAddress);
+    // console.log("tokenBalance   : " + tokenBalance);
+    // console.log("accountPrivateKey  : " + accountPrivateKey);
     var data = newContract.methods.transfer(walletAddress, tokenBalance).encodeABI();
-    web3.eth.getTransactionCount(walletAddress, (errtxCount, txCount) => {
+    web3.eth.getTransactionCount(accountAddress, (errtxCount, txCount) => {
         const txObject = {
             nonce: txCount,
             to: contractAddress,
@@ -649,6 +668,12 @@ async function SendToken(web3, newContract, contractAddress, symbol, walletAddre
                 console.log(colors.red('MOVE TOKEN'));
                 if (err) {
                     console.log(colors.red('error: MoveToken sendSignedTransaction error'));
+                    web3.eth.getGasPrice().then((gasPrice) => {
+                        const reqTxFee = gasPrice * 100000;
+                        console.log("gas  : " + web3.utils.fromWei("100000", 'ether'));
+                        console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
+                        console.log("reqTxFee  : " + web3.utils.fromWei(reqTxFee.toString(), 'ether'));
+                    });
                     console.log(err);
                 } else {
                     const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');

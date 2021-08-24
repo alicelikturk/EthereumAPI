@@ -292,7 +292,11 @@ async function MoveEth(account) {
                             web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
                                 if (err) {
                                     console.log(colors.red('error: MoveEth sendSignedTransaction error'));
-                                    //console.log(err);
+                                    console.log(err);
+                                    console.log("balance  : " + web3.utils.fromWei(balance.toString(), 'ether'));
+                                    console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
+                                    console.log("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether'));
+                                    console.log("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether'));
                                 }
                                 else {
                                     const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
