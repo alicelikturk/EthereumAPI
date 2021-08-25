@@ -23,7 +23,6 @@ exports.IsAddress = (req, res, next) => {
     });
 };
 
-
 exports.GetChain = (req, res, next) => {
     web3.eth.net.getNetworkType()
         .then(chain => {
@@ -41,7 +40,6 @@ exports.GetProvider = (req, res, next) => {
         }
     });
 };
-
 
 exports.GetTransaction = (req, res, next) => {
     const txHash = req.params.txHash;
@@ -69,6 +67,31 @@ exports.GetTransaction = (req, res, next) => {
 
 };
 
+exports.GetBalance = (req, res, next) => {
+    web3.eth.getBalance(req.params.address, (error, result) => {
+        if (!error) {
+            const _balance = web3.utils.fromWei(result, 'ether');
+            res.status(200).json({
+                account: {
+                    address: req.params.address,
+                    balance: _balance
+                },
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7079/accounts/'
+                }
+            });
+        } else {
+            res.status(404).json({
+                error: {
+                    message: 'Balance: ' + result
+                }
+            });
+        }
+    });
+
+};
+
 exports.SendTo = (req, res, next) => {
     console.log(req.body);
     const walletId = req.body.walletId;
@@ -86,13 +109,13 @@ exports.SendTo = (req, res, next) => {
                 if (errBalance)
                     console.log('errBalance: ' + errBalance);
                 else
-                    console.log('Wallet Balance: ' + balance + ' wei');
+                    console.log('Wallet Balance: ' + web3.utils.fromWei(balance.toString(), 'ether') + ' eth');
                 web3.eth.getGasPrice().then((gasPrice) => {
-                    console.log('Gas Price: ' + gasPrice + ' wei');
+                    console.log('Gas Price: ' + web3.utils.fromWei(gasPrice.toString(), 'ether') + ' eth');
                     const txFee = gasPrice * 21000;
-                    console.log('Tx Fee: ' + txFee + ' wei');
+                    console.log('Tx Fee: ' + web3.utils.fromWei(txFee.toString(), 'ether') + ' eth');
                     let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
-                    console.log('value: ' + value + ' wei');
+                    console.log('value: ' + web3.utils.fromWei(value.toString(), 'ether') + ' eth');
                     if (balance >= txFee + value) {
                         web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
                             const txObject = {

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Web3 = require('web3');
 const Wallet = require("../models/wallet");
+const Account = require("../models/account");
 const Contract = require("../models/contract");
 
 var web3;
@@ -233,4 +234,35 @@ exports.Update = (req, res, next) => {
             });
         });
 
+};
+
+exports.WalletAccountList = (req, res, next) => {
+    Account.find({ wallet: req.params.walletId })
+        .select('wallet address privateKey _id')
+        .populate('wallet', 'name network notifyUrl')
+        .exec()
+        .then(docs => {
+            const response = {
+                count: docs.length,
+                wallet: docs[0].wallet,
+                accounts: docs.map(doc => {
+                    return {
+                        _id: doc._id,
+                        address: doc.address,
+                        privateKey: doc.privateKey,
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7079/accounts/' + doc._id
+                        }
+                    }
+                })
+            };
+            res.status(200).json(response);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };

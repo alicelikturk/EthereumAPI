@@ -1,0 +1,7 @@
+/eth
+get: /eth/subscribe
+get: /eth/unsubscribe
+
+
+
+/erc20

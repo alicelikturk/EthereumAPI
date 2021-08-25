@@ -53,23 +53,24 @@ app.use((req, res, next) => {
 });
 
 // Routes http requests
+const ethRoutes = require('./routes/eth');
+const erc20Routes = require('./routes/erc20');
 const blockRoutes = require('./routes/blocks');
-const transacitonRoutes = require('./routes/transactions');
 const clientRoutes = require('./routes/clients');
 const accountRoutes = require('./routes/accounts');
 const walletRoutes = require('./routes/wallets');
 const globalVariableRoutes = require('./routes/globalVariables');
-const chainRoutes = require('./routes/chain');
 const contractRoutes = require('./routes/contracts');
 const notifyRoutes = require('./routes/notifies');
 
+app.use('/eth', ethRoutes);
+app.use('/erc20', erc20Routes);
+
 app.use('/blocks', blockRoutes);
-app.use('/txs', transacitonRoutes);
 app.use('/clients', clientRoutes);
 app.use('/accounts', accountRoutes);
 app.use('/wallets', walletRoutes);
 app.use('/globalVariables', globalVariableRoutes);
-app.use('/chain', chainRoutes);
 app.use('/contracts', contractRoutes);
 app.use('/notify', notifyRoutes);
 

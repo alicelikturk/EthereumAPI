@@ -43,37 +43,6 @@ exports.List = (req, res, next) => {
         });
 };
 
-exports.WalletAccountList = (req, res, next) => {
-    Account.find({ wallet: req.params.walletId })
-        .select('wallet address privateKey _id')
-        .populate('wallet', 'name network notifyUrl')
-        .exec()
-        .then(docs => {
-            const response = {
-                count: docs.length,
-                wallet: docs[0].wallet,
-                accounts: docs.map(doc => {
-                    return {
-                        _id: doc._id,
-                        address: doc.address,
-                        privateKey: doc.privateKey,
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:7079/accounts/' + doc._id
-                        }
-                    }
-                })
-            };
-            res.status(200).json(response);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        });
-};
-
 exports.Add = (req, res, next) => {
     const id = req.body.walletId;
     Wallet.findById(id)
@@ -141,31 +110,6 @@ exports.Get = (req, res, next) => {
                 error: err
             });
         });
-};
-
-exports.GetBalance = (req, res, next) => {
-    web3.eth.getBalance(req.params.address, (error, result) => {
-        if (!error) {
-            const _balance = web3.utils.fromWei(result, 'ether');
-            res.status(200).json({
-                account: {
-                    address: req.params.address,
-                    balance: _balance
-                },
-                request: {
-                    type: 'GET',
-                    url: 'http://localhost:7079/accounts/'
-                }
-            });
-        } else {
-            res.status(404).json({
-                error: {
-                    message: 'Balance: ' + result
-                }
-            });
-        }
-    });
-
 };
 
 exports.Delete = (req, res, next) => {
