@@ -311,7 +311,7 @@ exports.SendToContract = (req, res, next) => {
         });
 };
 
-async function SubscribeToTokenTransfer() {
+function SubscribeToTokenTransfer() {
     Contract.find()
         .exec()
         .then(docs => {
@@ -479,7 +479,7 @@ async function getConfirmations(txHash) {
     }
 }
 
-async function confirmTokenTransaction(txHash, gVar, postedData, account, contract) {
+function confirmTokenTransaction(txHash, gVar, postedData, account, contract) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
@@ -554,7 +554,7 @@ async function confirmTokenTransaction(txHash, gVar, postedData, account, contra
     }, 5 * 1000)
 }
 
-async function MoveToken(account, contract) {
+function MoveToken(account, contract) {
     const accountAddress = account.address;
     const accountPrivateKey = account.privateKey;
     const walletAddress = account.wallet.address;
@@ -572,12 +572,12 @@ async function MoveToken(account, contract) {
                         if (etherBalance >= txFee) {
                             const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
                             console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + valueToken + ' ' + contract.symbol));
-                            SendToken(web3, 
-                                newContract, 
-                                contract.contractAddress, 
-                                contract.symbol, 
-                                walletAddress, 
-                                tokenBalance, 
+                            SendToken(web3,
+                                newContract,
+                                contract.contractAddress,
+                                contract.symbol,
+                                walletAddress,
+                                tokenBalance,
                                 accountPrivateKey,
                                 accountAddress);
                         } else {
@@ -620,7 +620,7 @@ async function MoveToken(account, contract) {
                                                                 // console.log(latestBlockHash);
                                                                 if (confNumber === 1) {
                                                                     // ether is ready. move the token
-                                                                    await SendToken(web3,
+                                                                    SendToken(web3,
                                                                         newContract,
                                                                         contract.contractAddress,
                                                                         contract.symbol,
@@ -650,7 +650,7 @@ async function MoveToken(account, contract) {
 
 }
 
-async function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey,accountAddress) {
+function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey, accountAddress) {
     // console.log("accountAddress  : " + accountAddress);
     // console.log("walletAddress  : " + walletAddress);
     // console.log("tokenBalance   : " + tokenBalance);

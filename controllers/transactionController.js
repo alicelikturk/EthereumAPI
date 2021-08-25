@@ -18,7 +18,7 @@ web3Model.SetClient(true)
         SubscribePendingTransactions();
     });
 
-async function SubscribePendingTransactions() {
+function SubscribePendingTransactions() {
     subscription = web3.eth.subscribe('pendingTransactions', async (error, result) => {
         //console.log(result);
         try {
@@ -171,7 +171,7 @@ async function getConfirmations(txHash) {
     }
 }
 
-async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
+function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
     const confirmationCount = gVar ? gVar.confirmationCount : 3;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
@@ -266,7 +266,7 @@ async function confirmEtherTransaction(txHash, gVar, asset, account, isAvailable
     }, 5 * 1000)
 }
 
-async function MoveEth(account) {
+function MoveEth(account) {
     const accountAddress = account.address;
     const accountPrivateKey = account.privateKey;
     const walletAddress = account.wallet.address;

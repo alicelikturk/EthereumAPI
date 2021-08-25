@@ -106,8 +106,13 @@ exports.SendTo = (req, res, next) => {
                 });
             }
             web3.eth.getBalance(wallet.address, (errBalance, balance) => {
-                if (errBalance)
+                if (errBalance) {
                     console.log('errBalance: ' + errBalance);
+                    return res.status(404).json({
+                        txHash: null,
+                        error: "SendTo getBalance error"
+                    });
+                }
                 else
                     console.log('Wallet Balance: ' + web3.utils.fromWei(balance.toString(), 'ether') + ' eth');
                 web3.eth.getGasPrice().then((gasPrice) => {
@@ -119,7 +124,7 @@ exports.SendTo = (req, res, next) => {
                     if (balance >= txFee + value) {
                         web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
                             const txObject = {
-                                nonce:txCount,
+                                nonce: txCount,
                                 to: toAddress,
                                 value: value, // in wei
                                 //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
@@ -136,7 +141,7 @@ exports.SendTo = (req, res, next) => {
                                     }
                                     return res.status(200).json({
                                         txHash: txHash,
-                                        fee:txFee
+                                        fee: txFee
                                     });
                                 });
                             });
