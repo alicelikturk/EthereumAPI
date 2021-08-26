@@ -172,7 +172,10 @@ async function getConfirmations(txHash) {
 }
 
 function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
-    const confirmationCount = gVar ? gVar.confirmationCount : 3;
+
+    //recommended min number of confirmation : 13
+
+    const confirmationCount = gVar ? gVar.confirmationCount : 13;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
@@ -275,7 +278,10 @@ function MoveEth(account) {
             const txFee = gasPrice * 21000;
             if (balance > txFee) {
                 const transferValue = balance - txFee;
-                web3.eth.getTransactionCount(accountAddress,"pending").then((txCount) => {
+                console.log(colors.red("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
+                console.log(colors.red("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
+                console.log(colors.red("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
+                web3.eth.getTransactionCount(accountAddress, "pending").then((txCount) => {
                     const txObject = {
                         nonce: txCount,
                         to: walletAddress,
@@ -283,6 +289,14 @@ function MoveEth(account) {
                         //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
                         gas: 21000
                     };
+                    console.log(colors.cyan("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
+                    console.log(colors.cyan("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
+                    console.log(colors.cyan("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
+                    if (balance != transferValue + txFee) {
+                        console.log(colors.magenta("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
+                        console.log(colors.magenta("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
+                        console.log(colors.magenta("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
+                    }
                     try {
                         web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
                             if (error) {

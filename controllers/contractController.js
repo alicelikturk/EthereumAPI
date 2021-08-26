@@ -484,7 +484,7 @@ async function getConfirmations(txHash) {
 }
 
 function confirmTokenTransaction(txHash, gVar, postedData, account, contract) {
-    const confirmationCount = gVar ? gVar.confirmationCount : 3;
+    const confirmationCount = gVar ? gVar.confirmationCount : 13;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
