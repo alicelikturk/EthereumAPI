@@ -107,7 +107,7 @@ exports.SendTo = (req, res, next) => {
             }
             web3.eth.getBalance(wallet.address, (errBalance, balance) => {
                 if (errBalance) {
-                    console.log('errBalance: ' + errBalance);
+                    console.log('SendTo errBalance: ' + errBalance);
                     return res.status(404).json({
                         txHash: null,
                         error: "SendTo getBalance error"
@@ -122,7 +122,8 @@ exports.SendTo = (req, res, next) => {
                     let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
                     console.log('value: ' + web3.utils.fromWei(value.toString(), 'ether') + ' eth');
                     if (balance >= txFee + value) {
-                        web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                        web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
+                            console.log(colors.bgBlue(txCount));
                             const txObject = {
                                 nonce: txCount,
                                 to: toAddress,
@@ -130,6 +131,7 @@ exports.SendTo = (req, res, next) => {
                                 //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
                                 gas: 21000
                             };
+                            console.log(colors.bgBlue(txObject));
                             web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
                                 web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
                                     if (err) {
@@ -160,26 +162,18 @@ exports.SendTo = (req, res, next) => {
 
 // Test Function
 exports.MoveTo = (req, res, next) => {
-    var data = {};
-    var total = 0;
-    readFiles('./keystore/', function (filename, content) {
-        const result = web3.eth.accounts.decrypt(content, 'TestPassword1234@');
-        web3.eth.getBalance(result.address, (error, balance) => {
-            const _balance = web3.utils.fromWei(balance, 'ether');
-            total += Number.parseFloat(_balance);
-            if (_balance > 0)
-                console.log(result.address + ' : ' + _balance + ' eth');
-        });
-
-    }, function (err) {
-        throw err;
+    web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","latest").then((txCount) => {
+        console.log(colors.green("latest"));
+        console.log(txCount);
     });
-    setTimeout(() => {
-        console.log('total' + ' : ' + total + ' eth');
-    }, 10000);
+    web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","pending").then((txCount) => {
+        console.log(colors.red("pending"));
+        console.log(txCount);
+    });
     res.status(200).json({
-        result: "test"
+        result: txCount
     });
+    
 };
 
 function readFiles(dirname, onFileContent, onError) {

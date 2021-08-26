@@ -244,6 +244,8 @@ exports.SendToContract = (req, res, next) => {
                             message: "Wallet not found"
                         });
                     }
+                    console.log("send to contract wallet");
+                    console.log(wallet);
                     const newContract = new web3.eth.Contract(JSON.parse(contract[0].abi), contract[0].contractAddress);
                     newContract.methods.balanceOf(wallet.address).call()
                         .then((tokenBalance) => {
@@ -262,13 +264,15 @@ exports.SendToContract = (req, res, next) => {
                                             var data = newContract.methods.transfer(toAddress, web3.utils.toWei(amount.toString(), 'ether')).encodeABI();
                                             //console.log('data');
                                             //console.log(data);
-                                            web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                                            web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
+                                                console.log(colors.bgRed(txCount));
                                                 const txObject = {
                                                     nonce: txCount,
                                                     to: contract[0].contractAddress,
                                                     data: data,
                                                     gas: 100000
                                                 };
+                                                console.log(colors.bgRed(txObject));
                                                 web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
                                                     web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
                                                         if (err) {
@@ -591,7 +595,7 @@ function MoveToken(account, contract) {
                                     }
                                     web3.eth.getBalance(wallet.address, (errBalance, walletEtherBalance) => {
                                         if (walletEtherBalance >= txFee) {
-                                            web3.eth.getTransactionCount(wallet.address, (errtxCount, txCount) => {
+                                            web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
                                                 const txObject = {
                                                     nonce: txCount,
                                                     to: accountAddress,
@@ -656,7 +660,7 @@ function SendToken(web3, newContract, contractAddress, symbol, walletAddress, to
     // console.log("tokenBalance   : " + tokenBalance);
     // console.log("accountPrivateKey  : " + accountPrivateKey);
     var data = newContract.methods.transfer(walletAddress, tokenBalance).encodeABI();
-    web3.eth.getTransactionCount(accountAddress, (errtxCount, txCount) => {
+    web3.eth.getTransactionCount(accountAddress,"pending").then((txCount) => {
         const txObject = {
             nonce: txCount,
             to: contractAddress,

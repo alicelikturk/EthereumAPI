@@ -275,7 +275,7 @@ function MoveEth(account) {
             const txFee = gasPrice * 21000;
             if (balance > txFee) {
                 const transferValue = balance - txFee;
-                web3.eth.getTransactionCount(accountAddress, (errtxCount, txCount) => {
+                web3.eth.getTransactionCount(accountAddress,"pending").then((txCount) => {
                     const txObject = {
                         nonce: txCount,
                         to: walletAddress,
