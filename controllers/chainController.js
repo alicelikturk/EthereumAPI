@@ -122,7 +122,7 @@ exports.SendTo = (req, res, next) => {
                     let value = parseFloat(web3.utils.toWei(amount.toString(), 'ether'));
                     console.log('value: ' + web3.utils.fromWei(value.toString(), 'ether') + ' eth');
                     if (balance >= txFee + value) {
-                        web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
+                        web3.eth.getTransactionCount(wallet.address, "pending").then((txCount) => {
                             console.log(colors.bgBlue(txCount));
                             const txObject = {
                                 nonce: txCount,
@@ -162,18 +162,29 @@ exports.SendTo = (req, res, next) => {
 
 // Test Function
 exports.MoveTo = (req, res, next) => {
-    web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","latest").then((txCount) => {
-        console.log(colors.green("latest"));
-        console.log(txCount);
-    });
-    web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","pending").then((txCount) => {
-        console.log(colors.red("pending"));
-        console.log(txCount);
+    // web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","latest").then((txCount) => {
+    //     console.log(colors.green("latest"));
+    //     console.log(txCount);
+    // });
+    // web3.eth.getTransactionCount("0x2A7957DCE7b025fA708206042B9C7DF8125C272d","pending").then((txCount) => {
+    //     console.log(colors.red("pending"));
+    //     console.log(txCount);
+    // });
+    web3.eth.getBalance("0x2A7957DCE7b025fA708206042B9C7DF8125C272d", (errBalance, balance) => {
+        web3.eth.getGasPrice().then((gasPrice) => {
+            const gas = 150000;
+            const txFee = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+            console.log(balance);
+            console.log(web3.utils.toBN(balance).toString());
+            console.log(web3.utils.toBN(balance).toNumber());
+            console.log(txFee.toNumber());
+            console.log(balance > txFee.toNumber());
+        });
     });
     res.status(200).json({
-        result: txCount
+        result: "txCount"
     });
-    
+
 };
 
 function readFiles(dirname, onFileContent, onError) {

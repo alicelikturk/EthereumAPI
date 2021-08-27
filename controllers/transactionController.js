@@ -39,8 +39,9 @@ function SubscribePendingTransactions() {
                         .exec()
                         .then(account => {
                             if (!account) {
-
+                                //console.log(result);
                             } else {
+                                //console.log(colors.green(result));
                                 const valueEther = web3.utils.fromWei(transaction.value, 'ether');
 
                                 console.log(colors.green('Deposit: ' + 'eth' + ' , ' + transaction.hash + ' , ' + transaction.to + ' , ' + valueEther + ' Ether'));
@@ -174,15 +175,18 @@ async function getConfirmations(txHash) {
 function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNotify) {
 
     //recommended min number of confirmation : 13
-
+    // eğer token transferi için gerekli ether gönderildi ise kalan etheri toplamak için 13 doğrulama bekleyecek.
+    // bu sayede token transferi tamamlanmış olacak
     const confirmationCount = gVar ? gVar.confirmationCount : 13;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
         //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
-
         if (txConfirmation.confirmation >= confirmationCount) {
+            // ether deposit gerçekleşirse bildirim gönderilecek
+            // token transferi için ana cüzdandan ether gönderildi ise
+            // bildirim gönderilmeyecek
             if (isAvailableToNotify === true) {
                 const valueEther = web3.utils.fromWei(txConfirmation.tx.value, 'ether')
 
@@ -216,12 +220,12 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
                             JSON.stringify(response.body)));
                     }
                 });
-            }
 
-            // Automatically moving eth from account to wallet address
-            const autoMoving = gVar ? gVar.autoMoving : false;
-            if (autoMoving)
-                MoveEth(account);
+                // Automatically moving eth from account to wallet address
+                const autoMoving = gVar ? gVar.autoMoving : false;
+                if (autoMoving)
+                    MoveEth(account);
+            }
 
             clearInterval(intervalId);
 
@@ -270,40 +274,32 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
 }
 
 function MoveEth(account) {
+    console.log("MoveEth");
     const accountAddress = account.address;
     const accountPrivateKey = account.privateKey;
     const walletAddress = account.wallet.address;
     web3.eth.getBalance(accountAddress, (errBalance, balance) => {
-        console.log("balance");
-        console.log(colors.bgGreen.white(balance));
         web3.eth.getGasPrice().then((gasPrice) => {
-            const gas=21000;
-            const txFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
-            console.log("txFee");
-            console.log(colors.bgGreen.white(txFee.toString()));
-            if (balance > txFee) {
-                const transferValue = web3.utils.toBN(balance).sub(web3.utils.toBN(txFee.toString()));
-                console.log("transferValue");
-                console.log(colors.bgGreen.white(transferValue.toString()));
-                console.log(colors.red("balance  : " + balance));
-                console.log(colors.red("txFee  : " + txFee));
-                console.log(colors.red("transferValue   : " + transferValue));
+            const gas = 21000;
+            const txFee = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+            if (balance > txFee.toNumber()) {
+                const transferValue = web3.utils.toBN(balance).sub(txFee);
+                // console.log("transferValue");
+                // console.log(colors.bgGreen.white(transferValue.toString()));
+                // console.log(colors.red("balance  : " + balance));
+                // console.log(colors.red("txFee  : " + txFee));
+                // console.log(colors.red("transferValue   : " + transferValue));
                 web3.eth.getTransactionCount(accountAddress, "pending").then((txCount) => {
                     const txObject = {
-                        nonce: txCount,
+                        nonce: txCount.toString(),
                         to: walletAddress,
-                        value: transferValue, // in wei
+                        value: transferValue.toString(), // in wei
                         //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                        gas: gas
+                        gas: gas.toString()
                     };
-                    console.log(colors.cyan("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
-                    console.log(colors.cyan("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
-                    console.log(colors.cyan("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
-                    if (balance != transferValue + txFee) {
-                        console.log(colors.magenta("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
-                        console.log(colors.magenta("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
-                        console.log(colors.magenta("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
-                    }
+                    // console.log(colors.cyan("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
+                    // console.log(colors.cyan("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
+                    // console.log(colors.cyan("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
                     try {
                         web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
                             if (error) {

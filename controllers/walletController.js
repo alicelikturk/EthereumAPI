@@ -146,6 +146,7 @@ exports.GetBalance = (req, res, next) => {
             console.log(wallet);
             web3.eth.getBalance(wallet.address, (error, result) => {
                 console.log(error);
+                console.log("balance: "+result);
                 const balance = web3.utils.fromWei(result, 'ether');
                 assetBalances.push({ name: 'eth', balance: balance });
                 Contract.find()

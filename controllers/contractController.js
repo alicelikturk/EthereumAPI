@@ -264,7 +264,7 @@ exports.SendToContract = (req, res, next) => {
                                             var data = newContract.methods.transfer(toAddress, web3.utils.toWei(amount.toString(), 'ether')).encodeABI();
                                             //console.log('data');
                                             //console.log(data);
-                                            web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
+                                            web3.eth.getTransactionCount(wallet.address, "pending").then((txCount) => {
                                                 console.log(colors.bgRed(txCount));
                                                 const txObject = {
                                                     nonce: txCount,
@@ -571,10 +571,10 @@ function MoveToken(account, contract) {
             if (tokenBalance >= assetMoveLimit) {
                 web3.eth.getBalance(accountAddress, (errBalance, etherBalance) => {
                     web3.eth.getGasPrice().then((gasPrice) => {
-                        const gas=150000;
-                        const txFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+                        const gas = 150000;
+                        const txFee = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
                         //console.log(etherBalance + ' >=' + txFee);
-                        if (etherBalance >= txFee) {
+                        if (etherBalance >= txFee.toNumber()) {
                             const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
                             console.log(colors.magenta('Token moving directly from ' + accountAddress + ' to ' + walletAddress + ' , ' + valueToken + ' ' + contract.symbol));
                             SendToken(web3,
@@ -584,7 +584,8 @@ function MoveToken(account, contract) {
                                 walletAddress,
                                 tokenBalance,
                                 accountPrivateKey,
-                                accountAddress);
+                                accountAddress,
+                                account);
                         } else {
                             // Send some ether for FEE >>>
                             // gas fee transfer to move the deposited token to the main wallet
@@ -596,7 +597,7 @@ function MoveToken(account, contract) {
                                     }
                                     web3.eth.getBalance(wallet.address, (errBalance, walletEtherBalance) => {
                                         if (walletEtherBalance >= txFee) {
-                                            web3.eth.getTransactionCount(wallet.address,"pending").then((txCount) => {
+                                            web3.eth.getTransactionCount(wallet.address, "pending").then((txCount) => {
                                                 const txObject = {
                                                     nonce: txCount,
                                                     to: accountAddress,
@@ -619,11 +620,11 @@ function MoveToken(account, contract) {
                                                             // })
                                                             .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
                                                                 // console.log('confirmation :' + (confNumber === 1));
-                                                                //console.log("MOVE TOKEN confirmation");
+                                                                console.log("MOVE TOKEN confirmation : " + confNumber);
                                                                 //console.log(confNumber);
                                                                 // console.log(receipt);
                                                                 // console.log(latestBlockHash);
-                                                                if (confNumber === 1) {
+                                                                if (confNumber === 3) {
                                                                     // ether is ready. move the token
                                                                     SendToken(web3,
                                                                         newContract,
@@ -632,7 +633,8 @@ function MoveToken(account, contract) {
                                                                         walletAddress,
                                                                         tokenBalance,
                                                                         accountPrivateKey,
-                                                                        accountAddress);
+                                                                        accountAddress,
+                                                                        account);
                                                                 }
                                                             });
                                                     });
@@ -643,6 +645,7 @@ function MoveToken(account, contract) {
                                             });
                                         } else {
                                             console.log(colors.red('error: Insufficient funds for gas * price + value. on {gas fee transfer to move the deposited token to the main wallet}'));
+                                            console.log(colors.red("walletEtherBalance: "+walletEtherBalance));
                                         }
                                     });
                                 });
@@ -655,13 +658,9 @@ function MoveToken(account, contract) {
 
 }
 
-function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey, accountAddress) {
-    // console.log("accountAddress  : " + accountAddress);
-    // console.log("walletAddress  : " + walletAddress);
-    // console.log("tokenBalance   : " + tokenBalance);
-    // console.log("accountPrivateKey  : " + accountPrivateKey);
+function SendToken(web3, newContract, contractAddress, symbol, walletAddress, tokenBalance, accountPrivateKey, accountAddress, account) {
     var data = newContract.methods.transfer(walletAddress, tokenBalance).encodeABI();
-    web3.eth.getTransactionCount(accountAddress,"pending").then((txCount) => {
+    web3.eth.getTransactionCount(accountAddress, "pending").then((txCount) => {
         const txObject = {
             nonce: txCount,
             to: contractAddress,
@@ -675,7 +674,7 @@ function SendToken(web3, newContract, contractAddress, symbol, walletAddress, to
                     console.log(colors.red('error: MoveToken sendSignedTransaction error'));
                     web3.eth.getGasPrice().then((gasPrice) => {
                         const gas = 100000;
-                        const reqTxFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+                        const reqTxFee = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
                         console.log("gas  : " + web3.utils.fromWei("100000", 'ether'));
                         console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
                         console.log("reqTxFee  : " + web3.utils.fromWei(reqTxFee.toString(), 'ether'));
@@ -685,7 +684,65 @@ function SendToken(web3, newContract, contractAddress, symbol, walletAddress, to
                     const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
                     console.log(colors.blue('Token moved to: ' + walletAddress + ' , ' + valueToken + ' ' + symbol + ' , ' + txHash));
                 }
-            });
+            })
+                .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
+                    console.log("Send TOKEN confirmation : " + confNumber);
+                    if (confNumber === 3) {
+                        MoveRemainingEth(account);
+                    }
+                });
+        });
+    });
+}
+
+
+function MoveRemainingEth(account) {
+    console.log("MoveRemainingEth");
+    const accountAddress = account.address;
+    const accountPrivateKey = account.privateKey;
+    const walletAddress = account.wallet.address;
+    web3.eth.getBalance(accountAddress, (errBalance, balance) => {
+        web3.eth.getGasPrice().then((gasPrice) => {
+            const gas = 21000;
+            const txFee = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+            if (balance > txFee.toNumber()) {
+                const transferValue = web3.utils.toBN(balance).sub(txFee);
+                web3.eth.getTransactionCount(accountAddress, "pending").then((txCount) => {
+                    const txObject = {
+                        nonce: txCount.toString(),
+                        to: walletAddress,
+                        value: transferValue.toString(), // in wei
+                        //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
+                        gas: gas.toString()
+                    };
+                    try {
+                        web3.eth.accounts.signTransaction(txObject, accountPrivateKey).then((result, error) => {
+                            if (error) {
+                                console.log(colors.yellow('error: MoveRemainingEth signTransaction error'));
+                                //console.log(err);
+                            }
+                            web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
+                                if (err) {
+                                    console.log(colors.red('error: MoveRemainingEth sendSignedTransaction error'));
+                                    console.log(err);
+                                    console.log("balance  : " + web3.utils.fromWei(balance.toString(), 'ether'));
+                                    console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
+                                    console.log("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether'));
+                                    console.log("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether'));
+                                }
+                                else {
+                                    const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
+                                    console.log(colors.blue('Ether moved to: ' + walletAddress + ' , ' + valueEther + ' Ether' + ' , ' + txHash));
+                                }
+                            });
+                        });
+                    } catch (errorTry) {
+                        console.log(colors.bgRed.white('MoveRemainingEth exception'));
+                        console.log(errorTry);
+                    }
+
+                });
+            }
         });
     });
 }
