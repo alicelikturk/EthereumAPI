@@ -274,20 +274,27 @@ function MoveEth(account) {
     const accountPrivateKey = account.privateKey;
     const walletAddress = account.wallet.address;
     web3.eth.getBalance(accountAddress, (errBalance, balance) => {
+        console.log("balance");
+        console.log(colors.bgGreen.white(balance));
         web3.eth.getGasPrice().then((gasPrice) => {
-            const txFee = gasPrice * 21000;
+            const gas=21000;
+            const txFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
+            console.log("txFee");
+            console.log(colors.bgGreen.white(txFee.toString()));
             if (balance > txFee) {
-                const transferValue = balance - txFee;
-                console.log(colors.red("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
-                console.log(colors.red("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));
-                console.log(colors.red("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether')));
+                const transferValue = web3.utils.toBN(balance).sub(web3.utils.toBN(txFee.toString()));
+                console.log("transferValue");
+                console.log(colors.bgGreen.white(transferValue.toString()));
+                console.log(colors.red("balance  : " + balance));
+                console.log(colors.red("txFee  : " + txFee));
+                console.log(colors.red("transferValue   : " + transferValue));
                 web3.eth.getTransactionCount(accountAddress, "pending").then((txCount) => {
                     const txObject = {
                         nonce: txCount,
                         to: walletAddress,
                         value: transferValue, // in wei
                         //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
-                        gas: 21000
+                        gas: gas
                     };
                     console.log(colors.cyan("balance  : " + web3.utils.fromWei(balance.toString(), 'ether')));
                     console.log(colors.cyan("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether')));

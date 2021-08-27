@@ -571,7 +571,8 @@ function MoveToken(account, contract) {
             if (tokenBalance >= assetMoveLimit) {
                 web3.eth.getBalance(accountAddress, (errBalance, etherBalance) => {
                     web3.eth.getGasPrice().then((gasPrice) => {
-                        const txFee = gasPrice * 150000;
+                        const gas=150000;
+                        const txFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
                         //console.log(etherBalance + ' >=' + txFee);
                         if (etherBalance >= txFee) {
                             const valueToken = web3.utils.fromWei(tokenBalance.toString(), 'ether');
@@ -673,7 +674,8 @@ function SendToken(web3, newContract, contractAddress, symbol, walletAddress, to
                 if (err) {
                     console.log(colors.red('error: MoveToken sendSignedTransaction error'));
                     web3.eth.getGasPrice().then((gasPrice) => {
-                        const reqTxFee = gasPrice * 100000;
+                        const gas = 100000;
+                        const reqTxFee =web3.utils.toBN(gasPrice).mul(web3.utils.toBN(gas.toString()));
                         console.log("gas  : " + web3.utils.fromWei("100000", 'ether'));
                         console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
                         console.log("reqTxFee  : " + web3.utils.fromWei(reqTxFee.toString(), 'ether'));
