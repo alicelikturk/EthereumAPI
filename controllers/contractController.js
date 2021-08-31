@@ -343,6 +343,7 @@ function SubscribeToTokenTransfer() {
                     fromBlock: 'latest' //'pending' 
                 };
                 console.log(doc.symbol + ' token subscribed');
+
                 newContract.events.Transfer(options, (error, result) => {
                     try {
                         console.log(doc.symbol + ' triggered');
@@ -620,7 +621,7 @@ function MoveToken(account, contract) {
                                                             // })
                                                             .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
                                                                 // console.log('confirmation :' + (confNumber === 1));
-                                                                console.log("MOVE TOKEN confirmation : " + confNumber);
+                                                                //console.log("MOVE TOKEN confirmation : " + confNumber);
                                                                 //console.log(confNumber);
                                                                 // console.log(receipt);
                                                                 // console.log(latestBlockHash);
@@ -645,7 +646,7 @@ function MoveToken(account, contract) {
                                             });
                                         } else {
                                             console.log(colors.red('error: Insufficient funds for gas * price + value. on {gas fee transfer to move the deposited token to the main wallet}'));
-                                            console.log(colors.red("walletEtherBalance: "+walletEtherBalance));
+                                            console.log(colors.red("walletEtherBalance: " + walletEtherBalance));
                                         }
                                     });
                                 });
@@ -686,7 +687,7 @@ function SendToken(web3, newContract, contractAddress, symbol, walletAddress, to
                 }
             })
                 .on('confirmation', async function (confNumber, receipt, latestBlockHash) {
-                    console.log("Send TOKEN confirmation : " + confNumber);
+                    //console.log("Send TOKEN confirmation : " + confNumber);
                     if (confNumber === 3) {
                         MoveRemainingEth(account);
                     }
