@@ -123,7 +123,7 @@ exports.SendTo = (req, res, next) => {
                     console.log('value: ' + web3.utils.fromWei(value.toString(), 'ether') + ' eth');
                     if (balance >= txFee + value) {
                         web3.eth.getTransactionCount(wallet.address, "pending").then((txCount) => {
-                            console.log(colors.bgBlue(txCount));
+                            //console.log(colors.bgBlue(txCount));
                             const txObject = {
                                 nonce: txCount,
                                 to: toAddress,
@@ -131,7 +131,7 @@ exports.SendTo = (req, res, next) => {
                                 //gasPrice: web3.utils.toWei('200', 'gwei'), //default: web3.eth.getGasPrice()
                                 gas: 21000
                             };
-                            console.log(colors.bgBlue(txObject));
+                            //console.log(colors.bgBlue(txObject));
                             web3.eth.accounts.signTransaction(txObject, wallet.privateKey).then((result, error) => {
                                 web3.eth.sendSignedTransaction(result.rawTransaction, (err, txHash) => {
                                     if (err) {

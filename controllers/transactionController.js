@@ -310,10 +310,10 @@ function MoveEth(account) {
                                 if (err) {
                                     console.log(colors.red('error: MoveEth sendSignedTransaction error'));
                                     console.log(err);
-                                    console.log("balance  : " + web3.utils.fromWei(balance.toString(), 'ether'));
-                                    console.log("gasPrice  : " + web3.utils.fromWei(gasPrice.toString(), 'ether'));
-                                    console.log("txFee  : " + web3.utils.fromWei(txFee.toString(), 'ether'));
-                                    console.log("transferValue   : " + web3.utils.fromWei(transferValue.toString(), 'ether'));
+                                    console.log("balance  : "+balance+" wei" + web3.utils.fromWei(balance.toString(), 'ether'));
+                                    console.log("gasPrice  : "+gasPrice+" wei" + web3.utils.fromWei(gasPrice.toString(), 'ether'));
+                                    console.log("txFee  : " +txFee+" wei"+ web3.utils.fromWei(txFee.toString(), 'ether'));
+                                    console.log("transferValue   : "+transferValue+" wei" + web3.utils.fromWei(transferValue.toString(), 'ether'));
                                 }
                                 else {
                                     const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
