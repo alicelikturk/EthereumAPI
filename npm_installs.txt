@@ -11,5 +11,5 @@ nodejs verson: 16.4.0
 9- npm install --save request (to send notify )
 10- npm install fs (not necessary)
 11- npm install forever -g
-
+12- npm install --save swagger-jsdoc swagger-ui-express
 ------------------------------

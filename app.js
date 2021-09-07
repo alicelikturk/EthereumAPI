@@ -3,6 +3,8 @@ const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
 
 const URL = 'mongodb://localhost:27017/ethDB';
 mongoose.connect(URL, {
@@ -34,6 +36,36 @@ GlobalVariable.findOne()
 // Seed Data
 //
 
+/* Swagger */
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: "Ethereum API Library",
+            version: "1.0.0"
+        }
+    },
+    server: [
+        { url: "http://localhost:7079" }
+    ],
+    apis: ['./routes/*']
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+// console.log(swaggerDocs);
+var options = {
+    explorer: true,
+    swaggerOptions: {
+        validatorUrl: null
+    },
+    // customCss: '.swagger-ui .topbar { display: none }',
+    // customCssUrl: '/custom.css',
+    // customJs: '/custom.js'
+};
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
+/* Swagger */
+
 app.use(morgan('dev'));
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -63,9 +95,9 @@ const globalVariableRoutes = require('./routes/globalVariables');
 const contractRoutes = require('./routes/contracts');
 const notifyRoutes = require('./routes/notifies');
 
+
 app.use('/eth', ethRoutes);
 app.use('/erc20', erc20Routes);
-
 app.use('/blocks', blockRoutes);
 app.use('/clients', clientRoutes);
 app.use('/accounts', accountRoutes);

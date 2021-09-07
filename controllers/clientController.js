@@ -28,6 +28,8 @@ exports.List = (req, res, next) => {
 };
 
 exports.Add = (req, res, next) => {
+    console.log(req.body);
+    console.log(req.body.isActive);
     if (req.body.isActive) {
         Client.updateMany({ isActive: true }, {
             isActive: false
@@ -61,8 +63,12 @@ exports.Add = (req, res, next) => {
                         });
                     })
             });
+    } else{
+        return res.status(500).json({
+            message: 'Error',
+            request:req.body
+        });
     }
-
 };
 
 exports.Get = (req, res, next) => {
