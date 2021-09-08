@@ -54,15 +54,18 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 // console.log(swaggerDocs);
 var options = {
-    explorer: true,
+    explorer: false,
     swaggerOptions: {
         validatorUrl: null
     },
+    swaggerOptions: {
+        docExpansion: "none"
+    }
     // customCss: '.swagger-ui .topbar { display: none }',
     // customCssUrl: '/custom.css',
     // customJs: '/custom.js'
 };
-app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, options));
 
 /* Swagger */
 
