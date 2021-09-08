@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const contractSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    standart: { type: String },
+    standart: { type: String ,default: 'ERC20'},
     symbol: { type: String },
     name: { type: String },
     assetMoveLimit: { type: Number, default: 100 },

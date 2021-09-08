@@ -55,6 +55,11 @@ exports.Add = (req, res, next) => {
             message: 'name is required'
         });
     }
+    if (!req.body.symbol) {
+        return res.status(404).json({
+            message: 'symbol is required'
+        });
+    }
     let _abi = require('../abiERC20.json');
     if (req.body.abi) {
         _abi = req.body.abi;
@@ -91,7 +96,6 @@ exports.Add = (req, res, next) => {
                 });
                 contract.save()
                     .then(result => {
-                        console.log(result);
                         res.status(201).json({
                             message: 'Contract stored',
                             createdContract: {
@@ -152,7 +156,6 @@ exports.Delete = (req, res, next) => {
             });
         })
         .catch(err => {
-            console.log(err);
             res.status(500).json({
                 error: err
             });
@@ -162,7 +165,6 @@ exports.Delete = (req, res, next) => {
 exports.Update = (req, res, next) => {
     const updateOps = {};
     for (const key of Object.keys(req.body)) {
-        console.log(key);
         if (key == 'abi')
             updateOps[key] = JSON.stringify(req.body[key]);
         else
@@ -187,7 +189,6 @@ exports.Update = (req, res, next) => {
             });
         })
         .catch(err => {
-            console.log(err);
             res.status(500).json({
                 error: err
             });
@@ -230,7 +231,7 @@ exports.SendToContract = (req, res, next) => {
     Contract.find({ contractAddress: contractAddress })
         .exec()
         .then(contract => {
-            if (!contract) {
+            if (contract.length < 1) {
                 return res.status(404).json({
                     txHash: null,
                     message: 'Contract not found'
@@ -309,7 +310,7 @@ exports.SendToContract = (req, res, next) => {
                 });
         })
         .catch(err => {
-            res.status(500).json({
+            return res.status(500).json({
                 error: err
             });
         });

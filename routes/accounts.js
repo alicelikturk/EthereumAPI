@@ -29,15 +29,21 @@ router.get('/', accountController.List);
  *     summary: Add new account
  *     tags: [Accounts]
  *     description: Add new account
- *     parameters:
- *      - name: walletId
- *        description: Wallet Id
- *        in: query
- *        required: true
- *        type: string
+ *     requestBody:
+ *      description: The account to create
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            required:
+ *              - walletId
+ *            properties:
+ *              walletId:
+ *                type: string
  *     responses:
- *       200:
- *         description: Created
+ *        200:
+ *          description: Created
  */
 router.post('/', accountController.Add);
 /**

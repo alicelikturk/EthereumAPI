@@ -29,53 +29,32 @@ router.get('/', clientController.List);
  *     summary: Add new client
  *     tags: [Clients]
  *     description: Add new client
- *     parameters:
- *       - name: isActive
- *         in: boolean
- *         schema:
- *           type: boolean
- *         required: true
- *         description: to set current client
- *       - name: name
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: client name
- *       - name: mainnetHttp
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: HTTP url for the mainnet with token
- *       - name: ropstenHttp
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: HTTP url for the ropsten with token
- *       - name: mainnetWss
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: WS url for the mainnet with token
- *       - name: ropstenWss
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: WS url for the ropsten with token
- *       - name: mainnetIpc
- *         in: query
- *         schema:
- *           type: string
- *         description: IPC for the mainnet with token
- *       - name: ropstenIpc
- *         in: query
- *         schema:
- *           type: string
- *         description: IPC for the ropsten with token
+ *     requestBody:
+ *       description: The client to create
+ *       required: true
+ *       content:
+ *         application/json:
+ *          schema:
+ *            type: object
+ *            required:
+ *              - isActive
+ *            properties:
+ *              isActive:
+ *                type: boolean
+ *              name:
+ *                type: string
+ *              mainnetHttp:
+ *                type: string
+ *              ropstenHttp:
+ *                type: string
+ *              mainnetWss:
+ *                type: string
+ *              ropstenWss:
+ *                type: string
+ *              mainnetIpc:
+ *                type: string
+ *              ropstenIpc:
+ *                type: string
  *     responses:
  *       200:
  *         description: Success
@@ -122,56 +101,35 @@ router.delete('/:clientId', clientController.Delete);
  * @swagger
  * /clients:
  *   patch:
- *     summary: Update new client
+ *     summary: Update the active client
  *     tags: [Clients]
- *     description: Update new client
- *     parameters:
- *       - name: isActive
- *         in: boolean
- *         schema:
- *           type: boolean
- *         required: true
- *         description: to set current client
- *       - name: name
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: client name
- *       - name: mainnetHttp
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: HTTP url for the mainnet with token
- *       - name: ropstenHttp
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: HTTP url for the ropsten with token
- *       - name: mainnetWss
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: WS url for the mainnet with token
- *       - name: ropstenWss
- *         in: query
- *         schema:
- *           type: string
- *         required: false
- *         description: WS url for the ropsten with token
- *       - name: mainnetIpc
- *         in: query
- *         schema:
- *           type: string
- *         description: IPC for the mainnet with token
- *       - name: ropstenIpc
- *         in: query
- *         schema:
- *           type: string
- *         description: IPC for the ropsten with token
+ *     description: Update the active client
+ *     requestBody:
+ *       description: The active client to update
+ *       required: true
+ *       content:
+ *         application/json:
+ *          schema:
+ *            type: object
+ *            required:
+ *              - isActive
+ *            properties:
+ *              isActive:
+ *                type: boolean
+ *              name:
+ *                type: string
+ *              mainnetHttp:
+ *                type: string
+ *              ropstenHttp:
+ *                type: string
+ *              mainnetWss:
+ *                type: string
+ *              ropstenWss:
+ *                type: string
+ *              mainnetIpc:
+ *                type: string
+ *              ropstenIpc:
+ *                type: string
  *     responses:
  *       200:
  *         description: Success
