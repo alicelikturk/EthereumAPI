@@ -35,9 +35,7 @@ exports.GetChain = (req, res, next) => {
 exports.GetProvider = (req, res, next) => {
     const currentProvider = web3.currentProvider;
     res.status(200).json({
-        provider: {
-            url: currentProvider.url
-        }
+        url: currentProvider.url
     });
 };
 
