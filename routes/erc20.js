@@ -3,7 +3,7 @@ const router = express.Router();
 const contractController = require('../controllers/contractController');
 const chainController = require('../controllers/chainController');
 const accountController = require('../controllers/accountController');
-
+const walletController = require('../controllers/walletController');
 
  /**
   * @swagger
@@ -90,16 +90,16 @@ router.get('/provider', chainController.GetProvider);
  *     tags: [ERC20]
  *     description: Add new account
  *     requestBody:
- *      description: The account to create
+ *      description: The account to create by wallet name
  *      required: true
  *      content:
  *        application/json:
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *     responses:
  *        200:
@@ -121,12 +121,12 @@ router.post('/accounts', accountController.Add);
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *              - contractAddress
  *              - amount
  *              - address
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *              contractAddress:
  *                type: string
@@ -301,5 +301,53 @@ router.delete('/contracts/:contractId', contractController.Delete);
  *          description: Updated
  */
 router.patch('/contracts', contractController.Update);
+/**
+ * @swagger
+ * /erc20/wallets/name/{wallet}:
+ *   patch:
+ *     summary: Update the wallet by wallet name
+ *     tags: [ERC20]
+ *     description: Update the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: wallet
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     requestBody:
+ *      description: The wallet to update
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              notifyUrl:
+ *                type: string
+ *     responses:
+ *        200:
+ *          description: Updated
+ */
+ router.patch('/wallets/name/:wallet', walletController.UpdateByName);
+ /**
+ * @swagger
+ * /erc20/wallets/name/{name}:
+ *   get:
+ *     summary: Get the wallet by wallet name
+ *     tags: [ERC20]
+ *     description: Get the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+  router.get('/wallets/name/:name', walletController.GetByName);
 
 module.exports = router;

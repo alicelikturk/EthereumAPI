@@ -44,22 +44,22 @@ exports.List = (req, res, next) => {
 };
 
 exports.Add = (req, res, next) => {
-    const id = req.body.walletId;
-    Wallet.findById(id)
+    const name = req.body.wallet;
+    Wallet.findOne({ name: name })
         .then(wallet => {
             if (!wallet) {
                 return res.status(404).json({
                     message: "Wallet not found",
-                    id: id
+                    name: name
                 });
             }
-
+console.log(wallet);
             let _account = web3.eth.accounts.create('');
             const account = new Account({
                 _id: new mongoose.Types.ObjectId(),
                 address: _account.address,
                 privateKey: _account.privateKey,
-                wallet: req.body.walletId
+                wallet: wallet._id
             });
             account.save()
                 .then(result => {

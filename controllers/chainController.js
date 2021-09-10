@@ -91,11 +91,10 @@ exports.GetBalance = (req, res, next) => {
 };
 
 exports.SendTo = (req, res, next) => {
-    console.log(req.body);
-    const walletId = req.body.walletId;
+    const name = req.body.wallet;
     const amount = req.body.amount;
     const toAddress = req.body.address;
-    Wallet.findById(walletId)
+    Wallet.findOne({name:name})
         .then(wallet => {
             if (!wallet) {
                 return res.status(404).json({

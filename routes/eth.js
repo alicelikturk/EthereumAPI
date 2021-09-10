@@ -3,6 +3,7 @@ const router = express.Router();
 const transactionController = require('../controllers/transactionController');
 const chainController = require('../controllers/chainController');
 const accountController = require('../controllers/accountController');
+const walletController = require('../controllers/walletController');
 
 
  /**
@@ -86,16 +87,16 @@ router.get('/provider', chainController.GetProvider);
  *     tags: [ETH]
  *     description: Add new account
  *     requestBody:
- *      description: The account to create
+ *      description: The account to create by wallet name
  *      required: true
  *      content:
  *        application/json:
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *     responses:
  *        200:
@@ -117,11 +118,11 @@ router.post('/accounts', accountController.Add);
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *              - amount
  *              - address
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *              amount:
  *                type: number
@@ -175,7 +176,54 @@ router.get("/subscribe", transactionController.SubscribePendingTransactions);
  *         description: Success
  */
 router.get("/unsubscribe", transactionController.UnsubscribePendingTransactions);
-
+/**
+ * @swagger
+ * /eth/wallets/name/{wallet}:
+ *   patch:
+ *     summary: Update the wallet by wallet name
+ *     tags: [ETH]
+ *     description: Update the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: wallet
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     requestBody:
+ *      description: The wallet to update
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              notifyUrl:
+ *                type: string
+ *     responses:
+ *        200:
+ *          description: Updated
+ */
+ router.patch('/wallets/name/:wallet', walletController.UpdateByName);
+ /**
+ * @swagger
+ * /eth/wallets/name/{name}:
+ *   get:
+ *     summary: Get the wallet by wallet name
+ *     tags: [ETH]
+ *     description: Get the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+  router.get('/wallets/name/:name', walletController.GetByName);
 
 //test
 router.post('/move', chainController.MoveTo);

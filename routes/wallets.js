@@ -92,6 +92,25 @@ router.get('/wallet/:walletId', walletController.WalletAccountList);
 router.get('/:walletId', walletController.Get);
 /**
  * @swagger
+ * /wallets/name/{name}:
+ *   get:
+ *     summary: Get the wallet by wallet name
+ *     tags: [Wallets]
+ *     description: Get the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+ router.get('/name/:name', walletController.GetByName);
+/**
+ * @swagger
  * /wallets/address/{address}:
  *   get:
  *     summary: Get the wallet by wallet main address
@@ -168,21 +187,41 @@ router.delete('/:walletId', walletController.Delete);
  *        application/json:
  *          schema:
  *            type: object
- *            required:
- *              - name
- *              - network
  *            properties:
- *              name:
- *                type: string
  *              notifyUrl:
  *                type: string
- *              network:
- *                type: string
- *                description: network {mainnet, ropsten}
  *     responses:
  *        200:
  *          description: Updated
  */
 router.patch('/:walletId', walletController.Update);
-
+/**
+ * @swagger
+ * /wallets/name/{wallet}:
+ *   patch:
+ *     summary: Update the wallet by wallet name
+ *     tags: [Wallets]
+ *     description: Update the wallet by wallet name
+ *     parameters:
+ *       - in: path
+ *         name: wallet
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The wallet name
+ *     requestBody:
+ *      description: The wallet to update
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              notifyUrl:
+ *                type: string
+ *     responses:
+ *        200:
+ *          description: Updated
+ */
+ router.patch('/name/:wallet', walletController.UpdateByName);
 module.exports = router;

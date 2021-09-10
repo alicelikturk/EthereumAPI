@@ -133,6 +133,30 @@ exports.GetByAddress = (req, res, next) => {
         });
 };
 
+exports.GetByName = (req, res, next) => {
+    Wallet.findOne({name:req.params.name})
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            res.status(200).json({
+                wallet: wallet,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7079/wallets'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
 exports.GetBalance = (req, res, next) => {
     Wallet.findById(req.params.walletId)
         .exec()
@@ -212,9 +236,8 @@ exports.Delete = (req, res, next) => {
 exports.Update = (req, res, next) => {
     const id = req.params.walletId;
     const updateOps = {};
-    for (const key of Object.keys(req.body)) {
-        updateOps[key] = req.body[key];
-    }
+    // only notifyUrl can be changed
+    updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ _id: id }, {
         $set: updateOps
     })
@@ -222,6 +245,31 @@ exports.Update = (req, res, next) => {
         .then(result => {
             res.status(200).json({
                 message: 'Wallet updated',
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7079/wallets/'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+
+};
+exports.UpdateByName = (req, res, next) => {
+    const name = req.params.wallet;
+    const updateOps = {};
+    // only notifyUrl can be changed
+    updateOps["notifyUrl"] = req.body["notifyUrl"];
+    Wallet.updateOne({ name: name }, {
+        $set: updateOps
+    })
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: 'Wallet updated by name',
                 request: {
                     type: 'GET',
                     url: 'http://localhost:7079/wallets/'

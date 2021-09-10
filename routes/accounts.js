@@ -30,16 +30,16 @@ router.get('/', accountController.List);
  *     tags: [Accounts]
  *     description: Add new account
  *     requestBody:
- *      description: The account to create
+ *      description: The account to create by wallet name
  *      required: true
  *      content:
  *        application/json:
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *     responses:
  *        200:

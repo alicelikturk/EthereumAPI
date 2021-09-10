@@ -182,7 +182,8 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
     var lastConfirmationCount = 0;
     var intervalId = setInterval(async () => {
         const txConfirmation = await getConfirmations(txHash);
-        //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
+        console.log(colors.bgBlack.white('gVar.confirmationCount : ' + gVar.confirmationCount));
+        console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
         if (txConfirmation.confirmation >= confirmationCount) {
             // ether deposit gerçekleşirse bildirim gönderilecek
             // token transferi için ana cüzdandan ether gönderildi ise

@@ -224,7 +224,7 @@ exports.GetBalance = (req, res, next) => {
 
 // Token Transfer
 exports.SendToContract = (req, res, next) => {
-    const walletId = req.body.walletId;
+    const name = req.body.wallet;
     const contractAddress = req.body.contractAddress;
     const amount = req.body.amount;
     const toAddress = req.body.address;
@@ -237,7 +237,7 @@ exports.SendToContract = (req, res, next) => {
                     message: 'Contract not found'
                 });
             }
-            Wallet.findById(walletId)
+            Wallet.findOne({name:name})
                 .then(wallet => {
                     if (!wallet) {
                         return res.status(404).json({

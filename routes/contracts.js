@@ -132,12 +132,12 @@ router.post('/', contractController.Add);
  *          schema:
  *            type: object
  *            required:
- *              - walletId
+ *              - wallet
  *              - contractAddress
  *              - amount
  *              - address
  *            properties:
- *              walletId:
+ *              wallet:
  *                type: string
  *              contractAddress:
  *                type: string
