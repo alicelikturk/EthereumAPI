@@ -40,7 +40,7 @@ exports.SubscribeNewBlockHeaders = (req, res, next) => {
 };
 
 exports.UnsubscribeNewBlockHeaders = (req, res, next) => {
-    subscription.unsubscribe(function (error, success) {
+    subscription.unsubscribe(function(error, success) {
         if (success) {
             console.log('Blocks successfully unsubscribed!');
         }

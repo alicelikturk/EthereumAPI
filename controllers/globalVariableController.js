@@ -6,11 +6,9 @@ exports.List = (req, res, next) => {
         .exec()
         .then(gVar => {
             const response = {
-                globalVariable: {
-                    _id:gVar._id,
-                    confirmationCount:gVar.confirmationCount,
-                    autoMoving:gVar.autoMoving
-                }
+                _id: gVar._id,
+                confirmationCount: gVar.confirmationCount,
+                autoMoving: gVar.autoMoving
             };
             res.status(200).json(response);
         })
@@ -28,8 +26,8 @@ exports.Update = (req, res, next) => {
         updateOps[key] = req.body[key];
     }
     GlobalVariable.updateOne({
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({

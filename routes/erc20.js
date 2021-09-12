@@ -4,13 +4,14 @@ const contractController = require('../controllers/contractController');
 const chainController = require('../controllers/chainController');
 const accountController = require('../controllers/accountController');
 const walletController = require('../controllers/walletController');
+const globalVariableController = require('../controllers/globalVariableController');
 
- /**
-  * @swagger
-  * tags:
-  *   name: ERC20
-  *   description: ERC20 token managing API
-  */
+/**
+ * @swagger
+ * tags:
+ *   name: ERC20
+ *   description: ERC20 token managing API
+ */
 
 /**
  * @swagger
@@ -329,8 +330,8 @@ router.patch('/contracts', contractController.Update);
  *        200:
  *          description: Updated
  */
- router.patch('/wallets/name/:wallet', walletController.UpdateByName);
- /**
+router.patch('/wallets/name/:wallet', walletController.UpdateByName);
+/**
  * @swagger
  * /erc20/wallets/name/{name}:
  *   get:
@@ -348,6 +349,42 @@ router.patch('/contracts', contractController.Update);
  *       200:
  *         description: Success
  */
-  router.get('/wallets/name/:name', walletController.GetByName);
+router.get('/wallets/name/:name', walletController.GetByName);
+/**
+ * @swagger
+ * /erc20/globalVariables:
+ *   get:
+ *     summary: Get all system variables
+ *     tags: [ERC20]
+ *     description: Get all system variables
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get('/globalVariables', globalVariableController.List);
+/**
+ * @swagger
+ * /erc20/globalVariables:
+ *   patch:
+ *     summary: Update the system variables
+ *     tags: [ERC20]
+ *     description: Update the system variables
+ *     requestBody:
+ *      description: Update the system variables
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              confirmationCount:
+ *                type: number
+ *              autoMoving:
+ *                type: boolean
+ *     responses:
+ *        200:
+ *          description: Updated
+ */
+router.patch('/globalVariables', globalVariableController.Update);
 
 module.exports = router;

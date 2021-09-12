@@ -1,0 +1,1 @@
+globalVariable eth ve erc20 için farklı farklı olacak

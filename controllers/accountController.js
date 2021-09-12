@@ -53,7 +53,6 @@ exports.Add = (req, res, next) => {
                     name: name
                 });
             }
-console.log(wallet);
             let _account = web3.eth.accounts.create('');
             const account = new Account({
                 _id: new mongoose.Types.ObjectId(),

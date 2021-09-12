@@ -4,14 +4,15 @@ const transactionController = require('../controllers/transactionController');
 const chainController = require('../controllers/chainController');
 const accountController = require('../controllers/accountController');
 const walletController = require('../controllers/walletController');
+const globalVariableController = require('../controllers/globalVariableController');
 
 
- /**
-  * @swagger
-  * tags:
-  *   name: ETH
-  *   description: ERC20 token managing API
-  */
+/**
+ * @swagger
+ * tags:
+ *   name: ETH
+ *   description: ERC20 token managing API
+ */
 
 /**
  * @swagger
@@ -204,8 +205,8 @@ router.get("/unsubscribe", transactionController.UnsubscribePendingTransactions)
  *        200:
  *          description: Updated
  */
- router.patch('/wallets/name/:wallet', walletController.UpdateByName);
- /**
+router.patch('/wallets/name/:wallet', walletController.UpdateByName);
+/**
  * @swagger
  * /eth/wallets/name/{name}:
  *   get:
@@ -223,8 +224,43 @@ router.get("/unsubscribe", transactionController.UnsubscribePendingTransactions)
  *       200:
  *         description: Success
  */
-  router.get('/wallets/name/:name', walletController.GetByName);
-
+router.get('/wallets/name/:name', walletController.GetByName);
+/**
+ * @swagger
+ * /eth/globalVariables:
+ *   get:
+ *     summary: Get all system variables
+ *     tags: [ETH]
+ *     description: Get all system variables
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get('/globalVariables', globalVariableController.List);
+/**
+ * @swagger
+ * /eth/globalVariables:
+ *   patch:
+ *     summary: Update the system variables
+ *     tags: [ETH]
+ *     description: Update the system variables
+ *     requestBody:
+ *      description: Update the system variables
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              confirmationCount:
+ *                type: number
+ *              autoMoving:
+ *                type: boolean
+ *     responses:
+ *        200:
+ *          description: Updated
+ */
+router.patch('/globalVariables', globalVariableController.Update);
 //test
 router.post('/move', chainController.MoveTo);
 router.get('/test', chainController.Test);

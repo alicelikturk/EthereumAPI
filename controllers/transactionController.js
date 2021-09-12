@@ -19,7 +19,7 @@ web3Model.SetClient(true)
     });
 
 function SubscribePendingTransactions() {
-    subscription = web3.eth.subscribe('pendingTransactions', async (error, result) => {
+    subscription = web3.eth.subscribe('pendingTransactions', async(error, result) => {
         //console.log(result);
         try {
             if (!error) {
@@ -82,7 +82,7 @@ function SubscribePendingTransactions() {
                                                     'Content-Type': 'application/json',
                                                     'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                                                 }
-                                            }, function (error, response, body) {
+                                            }, function(error, response, body) {
                                                 console.log(colors.cyan('Deposit ether notification request \t' +
                                                     '{' + account.wallet.notifyUrl + '}' + ' sent'));
                                                 if (error) {
@@ -139,7 +139,7 @@ exports.SubscribePendingTransactions = (req, res, next) => {
     });
 };
 exports.UnsubscribePendingTransactions = (req, res, next) => {
-    subscription.unsubscribe(function (error, success) {
+    subscription.unsubscribe(function(error, success) {
         if (success) {
             console.log('Transactions successfully unsubscribed!');
         }
@@ -180,10 +180,10 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
     const confirmationCount = gVar ? gVar.confirmationCount : 13;
     const url = account.wallet.notifyUrl;
     var lastConfirmationCount = 0;
-    var intervalId = setInterval(async () => {
+    var intervalId = setInterval(async() => {
         const txConfirmation = await getConfirmations(txHash);
-        console.log(colors.bgBlack.white('gVar.confirmationCount : ' + gVar.confirmationCount));
-        console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
+        //console.log(colors.bgBlack.white('gVar.confirmationCount : ' + gVar.confirmationCount));
+        //console.log(colors.bgBlack.white('Confirmation (tx: ' + txHash + ') : ' + txConfirmation.confirmation));
         if (txConfirmation.confirmation >= confirmationCount) {
             // ether deposit gerçekleşirse bildirim gönderilecek
             // token transferi için ana cüzdandan ether gönderildi ise
@@ -210,7 +210,7 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
                         'Content-Type': 'application/json',
                         'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                     }
-                }, function (error, response, body) {
+                }, function(error, response, body) {
                     console.log(colors.cyan('Deposit ether confirmation notification request \t' +
                         '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
                     if (error) {
@@ -254,7 +254,7 @@ function confirmEtherTransaction(txHash, gVar, asset, account, isAvailableToNoti
                             'Content-Type': 'application/json',
                             'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
                         }
-                    }, function (error, response, body) {
+                    }, function(error, response, body) {
                         console.log(colors.cyan('Deposit ether confirmation notification request \t' +
                             '{' + url + ', ' + valueEther + ' eth, ' + txConfirmation.tx.hash + '}' + ' sent'));
                         if (error) {
@@ -311,12 +311,11 @@ function MoveEth(account) {
                                 if (err) {
                                     console.log(colors.red('error: MoveEth sendSignedTransaction error'));
                                     console.log(err);
-                                    console.log("balance  : "+balance+" wei" + web3.utils.fromWei(balance.toString(), 'ether'));
-                                    console.log("gasPrice  : "+gasPrice+" wei" + web3.utils.fromWei(gasPrice.toString(), 'ether'));
-                                    console.log("txFee  : " +txFee+" wei"+ web3.utils.fromWei(txFee.toString(), 'ether'));
-                                    console.log("transferValue   : "+transferValue+" wei" + web3.utils.fromWei(transferValue.toString(), 'ether'));
-                                }
-                                else {
+                                    console.log("balance  : " + balance + " wei" + web3.utils.fromWei(balance.toString(), 'ether'));
+                                    console.log("gasPrice  : " + gasPrice + " wei" + web3.utils.fromWei(gasPrice.toString(), 'ether'));
+                                    console.log("txFee  : " + txFee + " wei" + web3.utils.fromWei(txFee.toString(), 'ether'));
+                                    console.log("transferValue   : " + transferValue + " wei" + web3.utils.fromWei(transferValue.toString(), 'ether'));
+                                } else {
                                     const valueEther = web3.utils.fromWei(transferValue.toString(), 'ether');
                                     console.log(colors.blue('Ether moved to: ' + walletAddress + ' , ' + valueEther + ' Ether' + ' , ' + txHash));
                                 }

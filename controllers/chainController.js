@@ -94,7 +94,7 @@ exports.SendTo = (req, res, next) => {
     const name = req.body.wallet;
     const amount = req.body.amount;
     const toAddress = req.body.address;
-    Wallet.findOne({name:name})
+    Wallet.findOne({ name: name })
         .then(wallet => {
             if (!wallet) {
                 return res.status(404).json({
@@ -109,8 +109,7 @@ exports.SendTo = (req, res, next) => {
                         txHash: null,
                         error: "SendTo getBalance error"
                     });
-                }
-                else
+                } else
                     console.log('Wallet Balance: ' + web3.utils.fromWei(balance.toString(), 'ether') + ' eth');
                 web3.eth.getGasPrice().then((gasPrice) => {
                     console.log('Gas Price: ' + web3.utils.fromWei(gasPrice.toString(), 'ether') + ' eth');
@@ -185,13 +184,13 @@ exports.MoveTo = (req, res, next) => {
 };
 
 function readFiles(dirname, onFileContent, onError) {
-    fs.readdir(dirname, function (err, filenames) {
+    fs.readdir(dirname, function(err, filenames) {
         if (err) {
             onError(err);
             return;
         }
-        filenames.forEach(function (filename) {
-            fs.readFile(dirname + filename, 'utf-8', function (err, content) {
+        filenames.forEach(function(filename) {
+            fs.readFile(dirname + filename, 'utf-8', function(err, content) {
                 if (err) {
                     onError(err);
                     return;
