@@ -11,7 +11,7 @@ const globalVariableController = require('../controllers/globalVariableControlle
  * @swagger
  * tags:
  *   name: ETH
- *   description: ERC20 token managing API
+ *   description: Ethereum managing API
  */
 
 /**
