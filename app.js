@@ -6,7 +6,8 @@ const mongoose = require('mongoose');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
 
-const URL = 'mongodb://localhost:27017/ethDB';
+// const URL = 'mongodb://localhost:27017/ethDB';
+const URL = 'mongodb+srv://blockchain-api-user:9X2lQ7HaCltOW153@blockchain-rest-api.ab0rv.mongodb.net/ethDB?retryWrites=true&w=majority';
 mongoose.connect(URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
